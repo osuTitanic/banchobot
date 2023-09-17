@@ -11,6 +11,7 @@ import app
 
 @app.session.commands.register(['register'])
 async def create_account(context: Context):
+    """Create an account"""
     author = context.message.author
 
     if users.fetch_by_discord_id(author.id):
