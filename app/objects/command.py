@@ -11,6 +11,10 @@ class Command:
 
     def has_permission(self, member: Member) -> bool:
         """Check if member has permission to execute this command"""
+        if not self.roles:
+            # Command does not require permissions
+            return True
+
         member_roles = [role.name for role in member.roles]
 
         for role in self.roles:
