@@ -19,6 +19,8 @@ S3_BASEURL    = os.environ.get('S3_BASEURL')
 REDIS_HOST = os.environ.get('REDIS_HOST')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 
+BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
+
 DOMAIN_NAME = os.environ.get('DOMAIN_NAME')
 
 APPROVED_MAP_REWARDS = eval(os.environ.get('APPROVED_MAP_REWARDS', 'False').capitalize())
