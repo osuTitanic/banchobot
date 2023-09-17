@@ -2,6 +2,7 @@
 from .common.cache.events import EventQueue
 from .common.database import Postgres
 from .common.storage import Storage
+from .manager import CommandManager
 
 from requests import Session
 from redis import Redis
@@ -26,10 +27,12 @@ events = EventQueue(
     connection=redis
 )
 
-logger = logging.getLogger('bancho')
+logger = logging.getLogger('banchobot')
 
+commands = CommandManager()
 storage = Storage()
+
 requests = Session()
 requests.headers = {
-    'User-Agent': f'deck-{config.VERSION}'
+    'User-Agent': f'banchobot-{config.VERSION}'
 }
