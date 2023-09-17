@@ -3,6 +3,16 @@ from app.common.database import DBScore
 from datetime import datetime
 
 import hashlib
+import config
+import os
+
+def setup():
+    if not config.S3_ENABLED:
+        # Create required folders if not they not already exist
+        os.makedirs(f'{config.DATA_PATH}/images/achievements', exist_ok=True)
+        os.makedirs(f'{config.DATA_PATH}/screenshots', exist_ok=True)
+        os.makedirs(f'{config.DATA_PATH}/replays', exist_ok=True)
+        os.makedirs(f'{config.DATA_PATH}/avatars', exist_ok=True)
 
 def compute_score_checksum(score: DBScore) -> str:
     return hashlib.md5(
