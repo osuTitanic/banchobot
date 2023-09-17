@@ -25,4 +25,8 @@ async def help(context: Context):
             value=command.function.__doc__
         )
 
-    await context.message.channel.send(embed=embed)
+    await context.message.channel.send(
+        embed=embed,
+        reference=context.message,
+        mention_author=True
+    )

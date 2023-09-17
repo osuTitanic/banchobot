@@ -27,7 +27,8 @@ class BanchoBot(discord.Client):
         if not (command := app.session.commands.get(trigger)):
             await message.channel.send(
                 f'Could not find that command. Type {config.BOT_PREFIX}help for a list of commands!',
-                mention_author=True
+                mention_author=True,
+                reference=message
             )
             return
 
@@ -39,7 +40,8 @@ class BanchoBot(discord.Client):
             )
             await message.channel.send(
                 'Your are not permitted to use that command.',
-                mention_author=True
+                mention_author=True,
+                reference=message
             )
             return
 
@@ -55,7 +57,8 @@ class BanchoBot(discord.Client):
             )
             await message.channel.send(
                 'An error occured while running this command.',
-                mention_author=True
+                mention_author=True,
+                reference=message
             )
 
     async def on_member_join(self, member: discord.Member):
