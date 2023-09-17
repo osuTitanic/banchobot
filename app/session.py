@@ -5,6 +5,8 @@ from .common.storage import Storage
 from .manager import CommandManager
 
 from requests import Session
+from typing import Optional
+from discord import Client
 from redis import Redis
 
 import logging
@@ -31,6 +33,8 @@ logger = logging.getLogger('banchobot')
 
 commands = CommandManager()
 storage = Storage()
+
+bot: Optional[Client] = None
 
 requests = Session()
 requests.headers = {

@@ -107,4 +107,5 @@ intents.members = True
 client = BanchoBot(intents=intents)
 
 def run():
+    app.session.bot = client
     client.run(config.BOT_TOKEN, log_handler=None)
