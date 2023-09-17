@@ -29,13 +29,7 @@ class BanchoBot(discord.Client):
             return
 
         if command.roles:
-            # Command requires permissions
-            author_roles = [role.name for role in message.author.roles]
-
-            for role in command.roles:
-                if role in author_roles:
-                    break
-            else:
+            if not command.has_permission(message.author):
                 # User doesn't have any of the required roles
                 app.session.logger.warning(
                     f"[{message.author}] -> Tried to execute command {config.BOT_PREFIX}{trigger} but doesn't have the role for it"
