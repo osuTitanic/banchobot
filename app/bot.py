@@ -17,6 +17,7 @@ class BanchoBot(discord.Client):
         if not message.content.startswith(config.BOT_PREFIX):
             return
 
+        # Parse command
         trigger, *args = message.content.strip()[1:].split()
 
         app.session.logger.info(
@@ -30,17 +31,17 @@ class BanchoBot(discord.Client):
             )
             return
 
-        if command.roles:
-            if not command.has_permission(message.author):
-                # User doesn't have any of the required roles
-                app.session.logger.warning(
-                    f"[{message.author}] -> Tried to execute command {config.BOT_PREFIX}{trigger} but doesn't have the role for it"
-                )
-                await message.channel.send(
-                    'Your are not permitted to use that command.',
-                    mention_author=True
-                )
-                return
+        # Check command roles
+        if not command.has_permission(message.author):
+            # User doesn't have any of the required roles
+            app.session.logger.warning(
+                f"[{message.author}] -> Tried to execute command {config.BOT_PREFIX}{trigger} but doesn't have the role for it"
+            )
+            await message.channel.send(
+                'Your are not permitted to use that command.',
+                mention_author=True
+            )
+            return
 
         try:
             # Try to execute command
