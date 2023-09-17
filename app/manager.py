@@ -11,7 +11,7 @@ class CommandManager:
 
         `triggers`: List of strings that trigger the command
 
-        `roles`: List of role names that the user requires to execute the command
+        `roles` (optional): List of role names that the user requires to execute the command
         """
         def wrapper(f: Callable):
             self.commands.append(
