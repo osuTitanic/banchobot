@@ -104,7 +104,8 @@ async def create_account(context: Context):
                 email='user@example.com', # TODO
                 pw_bcrypt=hashed_password,
                 country='XX',
-                activated=True
+                activated=True,
+                discord_id=author.id
             )
 
             if not user:
