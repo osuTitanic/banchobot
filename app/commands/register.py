@@ -134,7 +134,7 @@ async def create_account(context: Context):
                 )
 
             # Add "Member" role
-            context.message.author.add_roles(
+            await context.message.author.add_roles(
                 discord.utils.get(author.guild.roles, name='Member')
             )
 
