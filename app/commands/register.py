@@ -104,7 +104,8 @@ async def create_account(context: Context):
                 email='user@example.com', # TODO
                 pw_bcrypt=hashed_password,
                 country='XX',
-                activated=True
+                activated=True,
+                discord_id=author.id
             )
 
             if not user:
@@ -134,7 +135,7 @@ async def create_account(context: Context):
                 )
 
             # Add "Member" role
-            context.message.author.add_roles(
+            await context.message.author.add_roles(
                 discord.utils.get(author.guild.roles, name='Member')
             )
 
