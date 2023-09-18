@@ -14,7 +14,7 @@ async def recent(context: Context):
     if not user:
         await context.message.channel.send(content="You don't have an account linked!")
         return
-    score = scores.fetch_recent(user_id=user.id, mode=0, limit=1)
+    score = scores.fetch_recent(user_id=user.id, mode=user.preferred_mode, limit=1)
     if not score:
         await context.message.channel.send(content="No recent scores.")
         return
