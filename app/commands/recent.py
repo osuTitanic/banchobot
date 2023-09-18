@@ -41,7 +41,7 @@ async def recent(context: Context):
         color=Color.blue(),
     )
     embed.set_author(name=f"Recent play for {user.name}")
-    embed.set_thumbnail(url=f"http://osu.{config.DOMAIN_NAME}/a/{user.id}")
+    embed.set_thumbnail(url=f"https://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
     embed.set_image(url=f'https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover@2x.jpg')
 
     if score.status < 2:
