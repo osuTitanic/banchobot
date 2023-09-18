@@ -14,13 +14,8 @@ async def recent(context: Context):
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send(content="You don't have an account linked!")
         return
-<<<<<<< HEAD
     score = scores.fetch_recent(user_id=user.id, mode=user.preferred_mode, limit=1)
     if not score:
-=======
-
-    if not (score := scores.fetch_recent(user_id=user.id, mode=0, limit=1)):
->>>>>>> 274a951f13c666c75ff077fcdf474a238a86c155
         await context.message.channel.send(content="No recent scores.")
         return
 
