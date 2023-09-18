@@ -1,5 +1,6 @@
 
 from app.common.database.repositories import users, scores
+from app.common.database.objects import DBBeatmapset
 from app.common.constants import Mods
 from app.objects import Context
 from discord import Embed
@@ -12,15 +13,17 @@ import app
 async def recent(context: Context):
     """Displays your last play"""
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
-        await context.message.channel.send(content="You don't have an account linked!")
+        await context.message.channel.send("You don't have an account linked!")
         return
+
     score = scores.fetch_recent(user_id=user.id, mode=user.preferred_mode, limit=1)
     if not score:
-        await context.message.channel.send(content="No recent scores.")
+        await context.message.channel.send("No recent scores.")
         return
 
     score = score[0]
-    beatmapset = score.beatmap.beatmapset
+    beatmapset: DBBeatmapset = score.beatmap.beatmapset
+
     rank = score.grade
     max_combo = score.max_combo
     accuracy = score.acc
@@ -39,6 +42,7 @@ async def recent(context: Context):
     )
     embed.set_author(name=f"Recent play for {user.name}")
     embed.set_thumbnail(url=f"http://osu.{config.DOMAIN_NAME}/a/{user.id}")
+    embed.set_image(url=f'https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover@2x.jpg')
 
     if score.status < 2:
         rank = f"F ({int((score.failtime/1000)/score.beatmap.total_length*100)}%)"
