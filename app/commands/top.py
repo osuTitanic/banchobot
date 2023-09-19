@@ -24,7 +24,7 @@ async def top(context: Context):
             )
             return
 
-    user_scores = scores.fetch_top_scores(user_id=user.id, mode=mode)[:10]
+    user_scores = scores.fetch_top_scores(user_id=user.id, mode=mode, limit=10)
     if not user_scores:
         await context.message.reply(f"No scores found for user {user.name}.")
         return
