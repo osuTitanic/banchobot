@@ -35,7 +35,7 @@ async def recent(context: Context):
     mods = Mods(score.mods).short
 
     embed = Embed(
-        title=f"{score.beatmap.beatmapset.full_name} [{score.beatmap_id}] +{mods}",
+        title=f"{score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods}",
         url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
         color=Color.blue(),
     )
