@@ -1,4 +1,3 @@
-
 from app.common.database.repositories import users, scores
 from app.common.database.objects import DBBeatmapset
 from app.common.constants import Mods
@@ -8,6 +7,7 @@ from discord import Color
 
 import config
 import app
+
 
 @app.session.commands.register(["recent", "last"])
 async def recent(context: Context):
@@ -42,12 +42,14 @@ async def recent(context: Context):
     )
     embed.set_author(name=f"Recent play for {user.name}")
     embed.set_thumbnail(url=f"https://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
-    embed.set_image(url=f'https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover@2x.jpg')
+    embed.set_image(
+        url=f"https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover@2x.jpg"
+    )
 
     if score.status < 2:
         rank = f"F ({int((score.failtime/1000)/score.beatmap.total_length*100)}%)"
 
-    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy:.2f} [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {nscore:,}"
+    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {nscore:,}"
 
     await context.message.channel.send(
         embed=embed, reference=context.message, mention_author=True
