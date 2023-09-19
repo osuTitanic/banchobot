@@ -50,7 +50,7 @@ async def top(context: Context):
         position += 1
 
     embed = Embed(
-        title=f"Top play for {user.name}",
+        title=f"Top plays for {user.name}",
         url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
         color=Color.blue(),
     )
