@@ -22,7 +22,6 @@ async def recent(context: Context):
         return
 
     score = score[0]
-    beatmapset: DBBeatmapset = score.beatmap.beatmapset
 
     rank = score.grade
     max_combo = score.max_combo
@@ -36,14 +35,14 @@ async def recent(context: Context):
     mods = Mods(score.mods).short
 
     embed = Embed(
-        title=f"{beatmapset.full_name} +{mods}",
+        title=f"{score.beatmap.beatmapset.full_name} [{score.beatmap_id}] +{mods}",
         url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
         color=Color.blue(),
     )
     embed.set_author(name=f"Recent play for {user.name}")
     embed.set_thumbnail(url=f"https://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
     embed.set_image(
-        url=f"https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover@2x.jpg"
+        url=f"https://assets.ppy.sh/beatmaps/{score.beatmap.set_id}/covers/cover@2x.jpg"
     )
 
     if score.status < 2:
