@@ -9,12 +9,15 @@ import app
 
 @app.session.commands.register(["top"])
 async def top(context: Context):
+    """<std/taiko/ctb/mania> - Displays your top plays"""
+
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send("You don't have an account linked!")
         return
-    mode = user.preferred_mode
 
+    mode = user.preferred_mode
     modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
+
     if len(context.args):
         if context.args[0] in modes:
             mode = modes[context.args[0]]
@@ -24,8 +27,7 @@ async def top(context: Context):
             )
             return
 
-    user_scores = scores.fetch_top_scores(user_id=user.id, mode=mode, limit=10)
-    if not user_scores:
+    if not (user_scores := scores.fetch_top_scores(user_id=user.id, mode=mode, limit=10)):
         await context.message.reply(f"No scores found for user {user.name}.")
         return
 
