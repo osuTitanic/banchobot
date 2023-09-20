@@ -11,6 +11,7 @@ import app
 
 @app.session.commands.register(["stats"])
 async def stats(context: Context):
+    """<std/taiko/ctb/mania> - Displays your statistics"""
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send("You don't have an account linked!")
         return
