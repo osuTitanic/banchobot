@@ -15,9 +15,10 @@ async def stats(context: Context):
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send("You don't have an account linked!")
         return
-    mode = user.preferred_mode
 
+    mode = user.preferred_mode
     modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
+
     if len(context.args):
         if context.args[0] in modes:
             mode = modes[context.args[0]]
@@ -27,7 +28,7 @@ async def stats(context: Context):
             )
             return
 
-    stats: DBStats = user.stats[mode]
+    stats: DBStats = [stats for stats in user.stats if stats.mode == mode][0]
 
     embed = Embed(
         title=f"Statistics for {user.name} (#{stats.rank})",
