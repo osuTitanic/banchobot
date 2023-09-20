@@ -9,7 +9,7 @@ import config
 import app
 
 
-@app.session.commands.register(["stats"])
+@app.session.commands.register(["stats", "profile"])
 async def stats(context: Context):
     """<std/taiko/ctb/mania> - Displays your statistics"""
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
