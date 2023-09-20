@@ -1,7 +1,9 @@
-from app.common.database.repositories import users, scores
+
+from app.common.database.repositories import users
 from app.common.database.objects import DBStats
-from app.common.constants import Mods
+from app.common.cache import leaderboards
 from app.objects import Context
+
 from discord import Embed
 from discord import Color
 
@@ -31,12 +33,15 @@ async def stats(context: Context):
     stats: DBStats = [stats for stats in user.stats if stats.mode == mode][0]
 
     embed = Embed(
-        title=f"Statistics for {user.name} (#{stats.rank})",
+        title=f"Statistics for {user.name}",
         url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
         color=Color.blue(),
     )
 
-    embed.add_field(name="Ranked score", value=f"{stats.rscore:,}")
+    pp_rank = leaderboards.global_rank(user.id, mode)
+    score_rank = leaderboards.score_rank(user.id, mode)
+
+    embed.add_field(name="Ranked score", value=f"{stats.rscore:,} (#{score_rank})")
     embed.add_field(name="Total score", value=f"{stats.tscore:,}")
     embed.add_field(name="Total hits", value=f"{stats.total_hits:,}")
     embed.add_field(name="Play count", value=f"{stats.playcount:,}")
@@ -44,7 +49,7 @@ async def stats(context: Context):
     embed.add_field(name="Replay views", value=f"{stats.replay_views:,}")
     embed.add_field(name="Accuracy", value=f"{stats.acc*100:.2f}%")
     embed.add_field(name="Max combo", value=f"{stats.max_combo:,}")
-    embed.add_field(name="Performance points", value=f"{stats.pp:.0f}pp")
+    embed.add_field(name="Performance points", value=f"{stats.pp:.0f}pp (#{pp_rank})")
     embed.add_field(name="SS/SS+", value=f"{stats.x_count}/{stats.xh_count}")
     embed.add_field(name="S/S+", value=f"{stats.s_count}/{stats.sh_count}")
     embed.add_field(
