@@ -37,7 +37,7 @@ async def recent(context: Context):
 
     embed = Embed(
         title=f"{score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods}",
-        url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
+        url=f"https://osu.ppy.sh/b/{score.beatmap_id}",
         color=Color.blue(),
     )
     embed.set_author(name=f"Recent play for {user.name}")
