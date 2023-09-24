@@ -89,7 +89,7 @@ async def add_beatmapset(context: Context):
                 beatmap.beatmap_hash,
                 beatmap.approved,
                 beatmap.version,
-                utils.get_beatmap_filename(beatmap.beatmapset_id),
+                utils.get_beatmap_filename(beatmap.beatmap_id),
                 beatmap.submit_date,
                 beatmap.last_update,
                 beatmap.total_length,
