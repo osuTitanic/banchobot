@@ -2,8 +2,10 @@
 from app.common.database import DBScore
 from datetime import datetime
 
+import requests
 import hashlib
 import config
+import re
 import os
 
 def setup():
@@ -36,3 +38,16 @@ def compute_score_checksum(score: DBScore) -> str:
 def get_ticks(dt) -> int:
     dt = dt.replace(tzinfo=None)
     return int((dt - datetime(1, 1, 1)).total_seconds() * 10000000)
+
+def get_beatmap_filename(id: int) -> str:
+    response = requests.head(f'https://old.ppy.sh/osu/{id}')
+
+    if not response.ok:
+        return ''
+
+    if not (cd := response.headers.get('content-disposition')):
+        return ''
+
+    return re.findall("filename=(.+)", cd)[0] \
+            .removeprefix('"') \
+            .removesuffix('"')
