@@ -1,11 +1,13 @@
+
 from app.common.database.repositories import users, scores
 from app.common.constants import Mods
 from app.objects import Context
+
 from discord import Embed
 from discord import Color
+
 import config
 import app
-
 
 @app.session.commands.register(["top"])
 async def top(context: Context):

@@ -16,7 +16,8 @@ async def recent(context: Context):
         await context.message.channel.send("You don't have an account linked!")
         return
 
-    score = scores.fetch_recent(user_id=user.id, mode=user.preferred_mode, limit=1)
+    score = scores.fetch_recent_all(user_id=user.id, limit=1)
+
     if not score:
         await context.message.channel.send("No recent scores.")
         return
@@ -36,7 +37,7 @@ async def recent(context: Context):
 
     embed = Embed(
         title=f"{score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods}",
-        url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
+        url=f"https://osu.ppy.sh/b/{score.beatmap_id}",
         color=Color.blue(),
     )
     embed.set_author(name=f"Recent play for {user.name}")
