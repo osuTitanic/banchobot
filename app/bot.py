@@ -17,6 +17,9 @@ class BanchoBot(discord.Client):
         if not message.content.startswith(config.BOT_PREFIX):
             return
 
+        if message.author.bot:
+            return
+
         # Parse command
         trigger, *args = message.content.strip()[1:].split()
 
