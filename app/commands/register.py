@@ -105,7 +105,8 @@ async def create_account(context: Context):
                 pw_bcrypt=hashed_password,
                 country='XX',
                 activated=True,
-                discord_id=author.id
+                discord_id=author.id,
+                permissions=1 if not config.FREE_SUPPORTER else 5
             )
 
             if not user:
