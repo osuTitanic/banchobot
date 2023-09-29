@@ -5,7 +5,6 @@ from app.objects import Context
 import asyncio
 import hashlib
 import discord
-import config
 import bcrypt
 import app
 
@@ -24,16 +23,17 @@ async def create_account(context: Context):
 
     app.session.logger.info(f'[{author}] -> Starting registration process...')
 
+    if type(context.message.channel) is not discord.DMChannel:
+        await context.message.channel.send(
+            content='Please check your dms!',
+            reference=context.message,
+            mention_author=True
+        )
+
     dm = await author.create_dm()
     await dm.send(
         'You are about to register an account on osuTitanic.\n'
         'Please enter a username!'
-    )
-
-    await context.message.channel.send(
-        content='Please check your dms!',
-        reference=context.message,
-        mention_author=True
     )
 
     def check(msg: discord.Message):
@@ -134,14 +134,29 @@ async def create_account(context: Context):
                     exc_info=e
                 )
 
-            # Add "Member" role
-            await context.message.author.add_roles(
-                discord.utils.get(author.guild.roles, name='Member')
-            )
+            try:
+                # Add "Member" role
+                if type(context.message.channel) is discord.DMChannel:
+                    guild = app.session.bot.guilds[0]
+                    member = guild.get_member(context.message.author.id)
+
+                    await member.add_roles(
+                        discord.utils.get(guild.roles, name='Member')
+                    )
+
+                else:
+                    await context.message.author.add_roles(
+                        discord.utils.get(author.guild.roles, name='Member')
+                    )
+            except Exception as e:
+                app.session.logger.warning(
+                    f'Failed to assign role: {e}',
+                    exc_info=e
+                )
 
         await dm.send(
-            "Congratulations! You can now try to log in.\n"
-            "If something doesn't work, feel free to ping a developer or admin!\n"
+            "Thank you! You can now try to log in.\n"
+            "If something doesn't work, feel free to ping a developer or admin.\n"
             "Have fun playing on this server!"
         )
 
