@@ -5,6 +5,7 @@ from app.objects import Context
 import asyncio
 import hashlib
 import discord
+import config
 import bcrypt
 import app
 
