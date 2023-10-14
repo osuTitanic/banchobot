@@ -35,6 +35,7 @@ class ViewReplayButton(View):
 
             button.disabled = True
 
+            await interaction.response.edit_message(view=self)
             await interaction.response.send_message(
                 file=discord.File(io.BytesIO(replay), filename=f'{self.score.id}.osr')
             )
