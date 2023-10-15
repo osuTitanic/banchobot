@@ -38,13 +38,11 @@ class ViewReplayButton(View):
 
             button.disabled = True
 
-            await interaction.channel.send(
-                file=discord.File(io.BytesIO(replay), filename=f'{self.score.id}.osr'),
-                reference=interaction.message,
-                mention_author=True
+            await interaction.response.send_message(
+                file=discord.File(io.BytesIO(replay), filename=f'{self.score.id}.osr')
             )
 
-            response = await interaction.edit_original_response(view=self)
+            await interaction.message.edit(view=self)
 
 @app.session.commands.register(["recent", "last"])
 async def recent(context: Context):
