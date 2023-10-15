@@ -24,6 +24,9 @@ class ViewReplayButton(View):
 
     @discord.ui.button(label='View Replay')
     async def view_replay(self, interaction: Interaction, button: Button):
+        if button.disabled:
+            return
+
         async with interaction.channel.typing():
             replay = app.session.storage.get_full_replay(self.score.id)
 
@@ -35,11 +38,13 @@ class ViewReplayButton(View):
 
             button.disabled = True
 
-            await interaction.response.send_message(
-                file=discord.File(io.BytesIO(replay), filename=f'{self.score.id}.osr')
+            await interaction.channel.send(
+                file=discord.File(io.BytesIO(replay), filename=f'{self.score.id}.osr'),
+                reference=interaction.message,
+                mention_author=True
             )
 
-            await interaction.response.edit_message(view=self)
+            response = await interaction.edit_original_response(view=self)
 
 @app.session.commands.register(["recent", "last"])
 async def recent(context: Context):
