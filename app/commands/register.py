@@ -1,5 +1,6 @@
 
 from app.common.database.repositories import users
+from discord.errors import Forbidden
 from app.objects import Context
 
 import asyncio
@@ -24,18 +25,26 @@ async def create_account(context: Context):
 
     app.session.logger.info(f'[{author}] -> Starting registration process...')
 
+    try:
+        dm = await author.create_dm()
+        await dm.send(
+            'You are about to register an account on osuTitanic.\n'
+            'Please enter a username!'
+        )
+    except Forbidden:
+        await context.message.channel.send(
+            'Failed to send a dm to your account. Please check your discord privacy settings!',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+
     if type(context.message.channel) is not discord.DMChannel:
         await context.message.channel.send(
             content='Please check your dms!',
             reference=context.message,
             mention_author=True
         )
-
-    dm = await author.create_dm()
-    await dm.send(
-        'You are about to register an account on osuTitanic.\n'
-        'Please enter a username!'
-    )
 
     def check(msg: discord.Message):
         return (
