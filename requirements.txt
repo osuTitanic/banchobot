@@ -19,7 +19,7 @@ maxminddb==2.4.0
 multidict==6.0.4
 oauthlib==3.2.2
 osrparse==6.0.2
-ossapi==3.3.7
+ossapi==3.4.0
 psycopg2==2.9.9
 python-dateutil==2.8.2
 python-dotenv==1.0.0
