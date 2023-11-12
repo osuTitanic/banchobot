@@ -120,7 +120,7 @@ async def create_account(context: Context):
             )
 
             if not user:
-                app.session.logger.warning('Failed to register user.')
+                app.session.logger.warning(f'[{author}] -> Failed to register user.')
                 await dm.send(
                     'Something went wrong during the registration. Please contact a developer!'
                 )
@@ -141,7 +141,7 @@ async def create_account(context: Context):
                 )
             except Exception as e:
                 app.session.logger.warning(
-                    'Failed to get profile picture from discord.',
+                    f'[{author}] -> Failed to get profile picture from discord.',
                     exc_info=e
                 )
 
@@ -161,9 +161,11 @@ async def create_account(context: Context):
                     )
             except Exception as e:
                 app.session.logger.warning(
-                    f'Failed to assign role: {e}',
+                    f'[{author}] -> Failed to assign role: {e}',
                     exc_info=e
                 )
+
+        app.session.logger.info(f'[{author}] -> Registration finished!')
 
         await dm.send(
             "Thank you! You can now try to log in.\n"
