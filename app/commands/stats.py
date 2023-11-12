@@ -34,7 +34,7 @@ async def stats(context: Context):
 
     embed = Embed(
         title=f"Statistics for {user.name}",
-        url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
+        url=f"http://osu.{config.DOMAIN_NAME}/u/{user.id}",
         color=Color.blue(),
     )
 
@@ -56,5 +56,5 @@ async def stats(context: Context):
         name="A/B/C/D",
         value=f"{stats.a_count}/{stats.b_count}/{stats.c_count}/{stats.d_count}",
     )
-    embed.set_thumbnail(url=f"https://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
+    embed.set_thumbnail(url=f"http://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
     await context.message.channel.send(embed=embed)

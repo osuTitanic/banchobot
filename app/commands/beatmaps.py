@@ -62,7 +62,7 @@ async def add_beatmapset(context: Context):
             filesize_novideo = 0
 
 
-        beatmapsets.create(
+        db_set = beatmapsets.create(
             maps[0].beatmapset_id,
             maps[0].title,
             maps[0].artist,
@@ -103,7 +103,7 @@ async def add_beatmapset(context: Context):
             )
 
         await context.message.channel.send(
-            'Beatmapset was created.',
+            f'[Beatmapset was created.](http://osu.{config.DOMAIN_NAME}/s/{db_set.id})',
             reference=context.message,
             mention_author=True
         )

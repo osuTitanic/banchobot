@@ -55,10 +55,10 @@ async def top(context: Context):
 
     embed = Embed(
         title=f"Top plays for {user.name}",
-        url="https://pbs.twimg.com/media/Dqnn54dVYAAVuki.jpg",
+        url=f"http://osu.{config.DOMAIN_NAME}/u/{user.id}#leader",
         color=Color.blue(),
     )
 
-    embed.set_thumbnail(url=f"https://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
+    embed.set_thumbnail(url=f"http://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
     embed.description = str_builder
     await context.message.channel.send(embed=embed)

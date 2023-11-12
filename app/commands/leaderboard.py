@@ -1,11 +1,13 @@
 
 from app.common.database.repositories import users
 from app.common.cache.leaderboards import top_players
+from app.common.constants import GameMode
 from app.objects import Context
 
 from discord import Embed
 from discord import Color
 
+import config
 import app
 
 @app.session.commands.register(["leaderboard", "lb"])
@@ -45,9 +47,14 @@ async def leaderboard(context: Context):
         position += 1
     str += "```"
 
+    mode_name = GameMode(mode).alias
+    order_type = {'pp': 'performance', 'score': 'rscore'}[type]
+    web_link = f"http://osu.{config.DOMAIN_NAME}/rankings/{order_type}/{mode_name}"
+
     await context.message.reply(
         embed=Embed(
             title=f"{modes_reversed[mode]} {type} leaderboard",
+            url=web_link,
             description=str,
             color=Color.blue(),
         )

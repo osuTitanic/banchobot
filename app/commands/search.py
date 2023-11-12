@@ -8,6 +8,7 @@ from discord import Embed, Interaction, Button
 from discord.ui import View
 
 import discord
+import config
 import app
 
 def create_embed(set: DBBeatmapset) -> Embed:
@@ -21,7 +22,7 @@ def create_embed(set: DBBeatmapset) -> Embed:
          4: 'Loved'
     }[set.status]
 
-    embed = Embed(title=set.full_name, url=f'https://osu.ppy.sh/s/{set.id}', description='')
+    embed = Embed(title=set.full_name, url=f'http://osu.{config.DOMAIN_NAME}/s/{set.id}', description='')
     embed.set_image(url=f'https://assets.ppy.sh/beatmaps/{set.id}/covers/cover@2x.jpg')
     embed.add_field(name='Title', value=set.title)
     embed.add_field(name='Artist', value=set.artist)
