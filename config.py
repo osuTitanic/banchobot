@@ -22,6 +22,9 @@ REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 BOT_PREFIX = os.environ.get('DISCORD_BOT_PREFIX')
 BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+SENDGRID_EMAIL = os.environ.get('SENDGRID_EMAIL')
+
 OSU_API_KEY = os.environ.get('OSU_API_KEY')
 DOMAIN_NAME = os.environ.get('DOMAIN_NAME')
 
