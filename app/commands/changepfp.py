@@ -30,6 +30,8 @@ async def create_account(context: Context):
             r = app.session.requests.get(context.message.attachments[0].url)
             r.raise_for_status()
 
+            # TODO: Add size limit & validate image
+
             app.session.storage.upload_avatar(
                 user.id,
                 r.content
