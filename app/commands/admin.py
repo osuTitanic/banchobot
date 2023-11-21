@@ -15,11 +15,15 @@ async def restrict(context: Context):
         return
     
     if context.args[0].isnumeric():
+        # Get internal user id
         discord_id = None
         user = users.fetch_by_id(int(context.args[0]))
+
     elif context.args[0].startswith("<@"):
+        # Get discord id
         discord_id = int(context.args[0][2:-1])
         user = users.fetch_by_discord_id(discord_id)
+
     else:
         await context.message.channel.send(
             f'Invalid syntax: `!{context.command} <user_id/mention> <reason>`',
@@ -70,11 +74,15 @@ async def unrestrict(context: Context):
         return
     
     if context.args[0].isnumeric():
+        # Get internal user id
         discord_id = None
         user = users.fetch_by_id(int(context.args[0]))
+
     elif context.args[0].startswith("<@"):
+        # Get discord id
         discord_id = int(context.args[0][2:-1])
         user = users.fetch_by_discord_id(discord_id)
+
     else:
         await context.message.channel.send(
             f'Invalid syntax: `!{context.command} <user_id/mention> <reason>`',
@@ -97,13 +105,14 @@ async def unrestrict(context: Context):
             reference=context.message,
             mention_author=True
         )
-    else:
-        users.update(user.id, {'restricted': False})
-        await context.message.channel.send(
-            f'User unrestricted.',
-            reference=context.message,
-            mention_author=True
-        )
+        return
+
+    users.update(user.id, {'restricted': False})
+    await context.message.channel.send(
+        f'User unrestricted.',
+        reference=context.message,
+        mention_author=True
+    )
 
 @app.session.commands.register(['rename'], roles=['Admin'])
 async def rename(context: Context):
@@ -119,9 +128,15 @@ async def rename(context: Context):
     username = " ".join(context.args[1:])
     
     if context.args[0].isnumeric():
+        # Get internal user id
+        discord_id = None
         user = users.fetch_by_id(int(context.args[0]))
+
     elif context.args[0].startswith("<@"):
-        user = users.fetch_by_discord_id(int(context.args[0][2:-1]))
+        # Get discord id
+        discord_id = int(context.args[0][2:-1])
+        user = users.fetch_by_discord_id(discord_id)
+
     else:
         await context.message.channel.send(
             f'Invalid syntax: `!{context.command} <user_id/mention> <new_name>`',
@@ -129,18 +144,19 @@ async def rename(context: Context):
             mention_author=True
         )
         return
-    
-    if user:
-        names.create(user.id, user.name)
-        users.update(user.id, {'name': username})
-        await context.message.channel.send(
-            'User renamed.',
-            reference=context.message,
-            mention_author=True
-        )
-    else:
+
+    if not user:
         await context.message.channel.send(
             'User not found!',
             reference=context.message,
             mention_author=True
         )
+        return
+
+    names.create(user.id, user.name)
+    users.update(user.id, {'name': username})
+    await context.message.channel.send(
+        'User renamed.',
+        reference=context.message,
+        mention_author=True
+    )
