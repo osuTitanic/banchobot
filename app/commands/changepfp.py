@@ -27,10 +27,33 @@ async def create_account(context: Context):
 
     async with context.message.channel.typing():
         try:
+            
+            if context.message.attachments[0].size > 1250**2: # Approx 1.5mb
+                await context.message.channel.send(
+                    'Image exceed the 1.5mb limit!',
+                    reference=context.message,
+                    mention_author=True
+                )
+                return
+            
+            if context.message.attachments[0].height > 1000:
+                await context.message.channel.send(
+                    'Image exceed the height limit!',
+                    reference=context.message,
+                    mention_author=True
+                )
+                return
+            
+            if context.message.attachments[0].width > 1000:
+                await context.message.channel.send(
+                    'Image exceed the width limit!',
+                    reference=context.message,
+                    mention_author=True
+                )
+                return
+            
             r = app.session.requests.get(context.message.attachments[0].url)
             r.raise_for_status()
-
-            # TODO: Add size limit & validate image
 
             app.session.storage.upload_avatar(
                 user.id,
