@@ -1,5 +1,4 @@
-from app.common.database.repositories import users
-from app.common.database.objects import DBUser
+from app.common.database.repositories import users, names
 from app.objects import Context
 
 import app
@@ -132,6 +131,7 @@ async def rename(context: Context):
         return
     
     if user:
+        names.create(user.id, user.name)
         users.update(user.id, {'name': username})
         await context.message.channel.send(
             'User renamed.',
