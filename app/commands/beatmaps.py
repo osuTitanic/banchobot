@@ -11,15 +11,7 @@ import app
 async def add_beatmapset(context: Context):
     """<set_id> - Add a beatmapset to the database"""
 
-    if not context.args:
-        await context.message.channel.send(
-            f'Invalid syntax: `!{context.command} <set_id>`',
-            reference=context.message,
-            mention_author=True
-        )
-        return
-
-    if not context.args[0].isnumeric():
+    if not context.args or not context.args[0].isnumeric():
         await context.message.channel.send(
             f'Invalid syntax: `!{context.command} <set_id>`',
             reference=context.message,
