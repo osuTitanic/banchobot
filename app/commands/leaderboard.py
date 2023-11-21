@@ -21,12 +21,12 @@ async def leaderboard(context: Context):
     modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
     modes_reversed = {0: "Standard", 1: "Taiko", 2: "Catch the beat", 3: "Mania"}
     type = "pp"
-
+    
     if context.args:
         for arg in context.args:
             if arg in modes:
                 mode = modes[arg]
-            elif arg in ["pp", "score"]:
+            elif arg in ["pp", "score", "total_score", "ppv1"]:
                 type = arg
             else:
                 await context.message.reply(
@@ -34,26 +34,29 @@ async def leaderboard(context: Context):
                 )
                 return
 
+    order_type = {'pp': 'performance', 'score': 'rscore', 'total_score': 'tscore', 'ppv1': 'ppv1'}[type]
+    value_name = {'pp': 'pp', 'score': 'ranked score', 'total_score': 'total score', 'ppv1': 'ppv1'}[type]
+
     lb = top_players(
-        mode=mode, range=10, type="performance" if type == "pp" else "rscore"
+        mode=mode, range=10, type=order_type
     )
 
-    value_name = "pp" if type == "pp" else " ranked score"
     str = "```"
     position = 1
+    
     for player_id, value in lb:
         player = users.fetch_by_id(player_id)
         str += f"#{position}. {player.name}: {value:,.0f}{value_name}\n"
         position += 1
+    
     str += "```"
 
     mode_name = GameMode(mode).alias
-    order_type = {'pp': 'performance', 'score': 'rscore'}[type]
     web_link = f"http://osu.{config.DOMAIN_NAME}/rankings/{order_type}/{mode_name}"
 
     await context.message.reply(
         embed=Embed(
-            title=f"{modes_reversed[mode]} {type} leaderboard",
+            title=f"{modes_reversed[mode]} {value_name} leaderboard",
             url=web_link,
             description=str,
             color=Color.blue(),
