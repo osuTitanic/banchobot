@@ -23,28 +23,29 @@ async def create_account(context: Context):
             reference=context.message,
             mention_author=True
         )
-        return 
+        return
 
-    try:
-        r = app.session.requests.get(context.message.attachments[0].url)
-        r.raise_for_status()
+    async with context.message.channel.typing():
+        try:
+            r = app.session.requests.get(context.message.attachments[0].url)
+            r.raise_for_status()
 
-        app.session.storage.upload_avatar(
-            user.id,
-            r.content
-        )
-        await context.message.channel.send(
-            'Profile picture changed.',
-            reference=context.message,
-            mention_author=True
-        )
-    except Exception as e:
-        await context.message.channel.send(
-            'An error occurred.',
-            reference=context.message,
-            mention_author=True
-        )
-        app.session.logger.warning(
-            f'[{author}] -> Failed to get profile picture from discord.',
-            exc_info=e
-        )
+            app.session.storage.upload_avatar(
+                user.id,
+                r.content
+            )
+            await context.message.channel.send(
+                'Profile picture changed.',
+                reference=context.message,
+                mention_author=True
+            )
+        except Exception as e:
+            await context.message.channel.send(
+                'An error occurred.',
+                reference=context.message,
+                mention_author=True
+            )
+            app.session.logger.warning(
+                f'[{author}] -> Failed to get profile picture from discord.',
+                exc_info=e
+            )
