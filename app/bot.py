@@ -42,7 +42,7 @@ class BanchoBot(discord.Client):
                 f"[{message.author}] -> Tried to execute command {config.BOT_PREFIX}{trigger} but doesn't have the role for it"
             )
             await message.channel.send(
-                'Your are not permitted to use that command.',
+                'You are not permitted to use that command.',
                 mention_author=True,
                 reference=message
             )
