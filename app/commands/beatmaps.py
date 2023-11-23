@@ -166,7 +166,7 @@ async def fix_beatmapset(context: Context):
             beatmaps.update(beatmap.id, beatmap_updates)
 
             await context.message.channel.send(
-                f'Updated "[{beatmap.version}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})"'
+                f'Updated "[{beatmap.version}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})".'
             )
 
         await context.message.channel.send(
