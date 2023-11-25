@@ -1,6 +1,8 @@
 
 from app.common.database.repositories import beatmapsets, beatmaps
+from app.common.database.objects import DBBeatmap
 from app.objects import Context
+from datetime import datetime
 from ossapi import OssapiV1
 
 import hashlib
@@ -171,6 +173,55 @@ async def fix_beatmapset(context: Context):
 
         await context.message.channel.send(
             'Done.',
+            reference=context.message,
+            mention_author=True
+        )
+
+
+@app.session.commands.register(['modset'], roles=['BAT', 'Admin'])
+async def change_beatmapset_status(context: Context):
+    """<set_id> <status> - Modify a beatmapset status"""
+
+    if len(context.args) < 2 or not context.args[0].isnumeric():
+        await context.message.channel.send(
+            f'Invalid syntax: `!{context.command} <set_id> <status>`',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+
+    set_id = int(context.args[0])
+
+    if context.args[1].isnumeric():
+        status = int(context.args[1])
+        if status not in range(-2, 5):
+            await context.message.channel.send(
+                f'Invalid status! Valid status: Ranked, Loved, Graveyard, numeric value',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+    else:
+        statuses = {'ranked': 1, 'loved': 2, 'graveyard': -2}
+        if context.args[1] not in statuses:
+            await context.message.channel.send(
+                f'Invalid status! Valid status: Ranked, Loved, Graveyard, numeric value',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+        status = statuses[context.args[1]]
+
+    async with context.message.channel.typing():
+        with app.session.database.session as session:
+            query = session.query(DBBeatmap).filter(DBBeatmap.set_id == set_id)
+            for beatmap in query.all():
+                beatmap.status = status
+                beatmap.last_update = datetime.now()
+            session.commit()
+        
+        await context.message.channel.send(
+            f'Changed {query.count()} beatmaps.',
             reference=context.message,
             mention_author=True
         )
