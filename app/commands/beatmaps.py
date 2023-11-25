@@ -1,6 +1,7 @@
 
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmap
+from app.common.constants import DatabaseStatus
 from app.objects import Context
 from datetime import datetime
 from ossapi import OssapiV1
@@ -191,21 +192,25 @@ async def change_beatmapset_status(context: Context):
         return
 
     set_id = int(context.args[0])
-
+    
     if context.args[1].isnumeric():
         status = int(context.args[1])
         if status not in range(-2, 5):
+            statuses = {status.name:status.value for status in DatabaseStatus}
+            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
             await context.message.channel.send(
-                f'Invalid status! Valid status: Ranked, Loved, Graveyard, numeric value',
+                f'Invalid status! Valid status: ```css\n{statuses}```',
                 reference=context.message,
                 mention_author=True
             )
             return
     else:
-        statuses = {'ranked': 1, 'loved': 2, 'graveyard': -2}
-        if context.args[1] not in statuses:
+        statuses = {status.name.lower():status.value for status in DatabaseStatus}
+        if context.args[1].lower() not in statuses:
+            statuses = {status.name:status.value for status in DatabaseStatus}
+            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
             await context.message.channel.send(
-                f'Invalid status! Valid status: Ranked, Loved, Graveyard, numeric value',
+                f'Invalid status! Valid status: ```css\n{statuses}```',
                 reference=context.message,
                 mention_author=True
             )
