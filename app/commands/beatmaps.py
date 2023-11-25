@@ -1,6 +1,6 @@
 
 from app.common.database.repositories import beatmapsets, beatmaps
-from app.common.database.objects import DBBeatmap
+from app.common.database.objects import DBBeatmap, DBBeatmapset
 from app.common.constants import DatabaseStatus
 from app.objects import Context
 from datetime import datetime
@@ -193,40 +193,55 @@ async def change_beatmapset_status(context: Context):
 
     set_id = int(context.args[0])
     
-    if context.args[1].isnumeric():
+    if context.args[1].lstrip('-+').isdigit():
         status = int(context.args[1])
-        if status not in range(-2, 5):
+        if status not in DatabaseStatus.values():
             statuses = {status.name:status.value for status in DatabaseStatus}
             statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
             await context.message.channel.send(
-                f'Invalid status! Valid status: ```css\n{statuses}```',
+                f'Invalid status! Valid status: ```\n{statuses}```',
                 reference=context.message,
                 mention_author=True
             )
             return
+
     else:
-        statuses = {status.name.lower():status.value for status in DatabaseStatus}
+        # Get valid statuses from enum
+        statuses = {
+            status.name.lower():status.value
+            for status in DatabaseStatus
+        }
         if context.args[1].lower() not in statuses:
             statuses = {status.name:status.value for status in DatabaseStatus}
             statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
             await context.message.channel.send(
-                f'Invalid status! Valid status: ```css\n{statuses}```',
+                f'Invalid status! Valid status: ```\n{statuses}```',
                 reference=context.message,
                 mention_author=True
             )
             return
-        status = statuses[context.args[1]]
+        status = statuses[context.args[1].lower()]
 
     async with context.message.channel.typing():
         with app.session.database.session as session:
-            query = session.query(DBBeatmap).filter(DBBeatmap.set_id == set_id)
-            for beatmap in query.all():
-                beatmap.status = status
-                beatmap.last_update = datetime.now()
+            session.query(DBBeatmapset) \
+                .filter(DBBeatmapset.id == set_id) \
+                .update({
+                    'status': status,
+                    'last_update': datetime.now()
+                })
+
+            rows_changed = session.query(DBBeatmap) \
+                .filter(DBBeatmap.set_id == set_id) \
+                .update({
+                    'status': status,
+                    'last_update': datetime.now()
+                })
+
             session.commit()
         
         await context.message.channel.send(
-            f'Changed {query.count()} beatmaps.',
+            f'Changed {rows_changed} beatmaps.',
             reference=context.message,
             mention_author=True
         )
