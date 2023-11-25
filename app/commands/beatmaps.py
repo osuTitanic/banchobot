@@ -119,13 +119,15 @@ async def fix_beatmapset(context: Context):
     set_id = int(context.args[0])
 
     async with context.message.channel.typing():
-        if not (beatmapset := beatmapsets.fetch_one(set_id)):
-            await context.message.channel.send(
-                'This beatmapset does not exist!',
-                reference=context.message,
-                mention_author=True
-            )
-            return
+        with app.session.database.session as session:
+            if not (beatmapset := session.get(DBBeatmapset, set_id)):
+                await context.message.channel.send(
+                    'This beatmapset does not exist!',
+                    reference=context.message,
+                    mention_author=True
+                )
+                return
+            session.expunge(beatmapset)
 
         for beatmap in beatmapset.beatmaps:
             beatmap_file = app.session.storage.get_beatmap(beatmap.id)
