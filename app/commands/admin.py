@@ -1,6 +1,7 @@
-from app.common.database.repositories import users, names
+from app.common.database.repositories import users, names, scores, stats, clients
 from app.objects import Context
 
+import config
 import app
 
 @app.session.commands.register(['restrict'], roles=['Admin'])
@@ -106,8 +107,22 @@ async def unrestrict(context: Context):
             mention_author=True
         )
         return
+    
+    # Restore scores
+    try:
+        scores.restore_hidden_scores(user.id)
+        stats.restore(user.id)
+    except Exception as e:
+        app.session.logger.error(
+            f'Failed to restore scores of player "{user.name}": {e}',
+            exc_info=e
+        )
+        await context.message.reply("Failed to restore scores!")
 
-    users.update(user.id, {'restricted': False})
+    # Unrestrict HWID
+    clients.update_all(user.id, {'banned': False})
+    users.update(user.id, {'restricted': False, 'permissions': 5 if config.FREE_SUPPORTER else 1})
+    
     await context.message.channel.send(
         f'User unrestricted.',
         reference=context.message,
