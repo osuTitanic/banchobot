@@ -1,5 +1,8 @@
-from app.common.database.repositories import users, names, scores, stats, clients
+from app.common.database.repositories import *
+from app.common.cache import leaderboards
 from app.objects import Context
+
+from datetime import datetime, timedelta
 
 import config
 import app
@@ -33,7 +36,7 @@ async def restrict(context: Context):
         )
         return
 
-    reason = "No reason." if len(context.args) < 3 else " ".join(context.args[2:])
+    reason = "No reason." if len(context.args) < 2 else " ".join(context.args[1:])
 
     if not user:
         await context.message.channel.send(
@@ -50,6 +53,24 @@ async def restrict(context: Context):
             mention_author=True
         )
     else:
+        leaderboards.remove(
+            user.id,
+            user.country
+        )
+        stats.delete_all(user.id)
+        scores.hide_all(user.id)
+
+        # Update hardware
+        clients.update_all(user.id, {'banned': True})
+
+        # Add entry inside infringements table
+        infringements.create(
+            user.id,
+            action=0,
+            length=None,
+            description=reason,
+            is_permanent=True
+        )
         users.update(user.id, {'restricted': True})
         app.session.events.submit(
             'restrict',
