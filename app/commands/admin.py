@@ -1,3 +1,4 @@
+
 from app.common.database.repositories import *
 from app.common.cache import leaderboards
 from app.objects import Context
@@ -71,19 +72,22 @@ async def restrict(context: Context):
             description=reason,
             is_permanent=True
         )
-        users.update(user.id, {'restricted': True})
+
+        users.update(user.id, {'restricted': True, 'permissions': 0})
+
+        # Kick client from bancho
         app.session.events.submit(
             'restrict',
             user_id=user.id,
             reason=reason
         )
+
         await context.message.channel.send(
             f'User restricted.',
             reference=context.message,
             mention_author=True
         )
             
-
 @app.session.commands.register(['unrestrict'], roles=['Admin'])
 async def unrestrict(context: Context):
     """<user_id> - Unrestrict user"""
