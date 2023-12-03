@@ -1,6 +1,11 @@
-from app.common.database.repositories import users, names
+
+from app.common.database.repositories import *
+from app.common.cache import leaderboards
 from app.objects import Context
 
+from datetime import datetime, timedelta
+
+import config
 import app
 
 @app.session.commands.register(['restrict'], roles=['Admin'])
@@ -32,7 +37,7 @@ async def restrict(context: Context):
         )
         return
 
-    reason = "No reason." if len(context.args) < 3 else " ".join(context.args[2:])
+    reason = "No reason." if len(context.args) < 2 else " ".join(context.args[1:])
 
     if not user:
         await context.message.channel.send(
@@ -49,19 +54,40 @@ async def restrict(context: Context):
             mention_author=True
         )
     else:
-        users.update(user.id, {'restricted': True})
+        leaderboards.remove(
+            user.id,
+            user.country
+        )
+        stats.delete_all(user.id)
+        scores.hide_all(user.id)
+
+        # Update hardware
+        clients.update_all(user.id, {'banned': True})
+
+        # Add entry inside infringements table
+        infringements.create(
+            user.id,
+            action=0,
+            length=None,
+            description=reason,
+            is_permanent=True
+        )
+
+        users.update(user.id, {'restricted': True, 'permissions': 0})
+
+        # Kick client from bancho
         app.session.events.submit(
             'restrict',
             user_id=user.id,
             reason=reason
         )
+
         await context.message.channel.send(
             f'User restricted.',
             reference=context.message,
             mention_author=True
         )
             
-
 @app.session.commands.register(['unrestrict'], roles=['Admin'])
 async def unrestrict(context: Context):
     """<user_id> - Unrestrict user"""
@@ -106,8 +132,22 @@ async def unrestrict(context: Context):
             mention_author=True
         )
         return
+    
+    # Restore scores
+    try:
+        scores.restore_hidden_scores(user.id)
+        stats.restore(user.id)
+    except Exception as e:
+        app.session.logger.error(
+            f'Failed to restore scores of player "{user.name}": {e}',
+            exc_info=e
+        )
+        await context.message.reply("Failed to restore scores!")
 
-    users.update(user.id, {'restricted': False})
+    # Unrestrict HWID
+    clients.update_all(user.id, {'banned': False})
+    users.update(user.id, {'restricted': False, 'permissions': 5 if config.FREE_SUPPORTER else 1})
+    
     await context.message.channel.send(
         f'User unrestricted.',
         reference=context.message,
