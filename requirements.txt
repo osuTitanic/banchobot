@@ -37,4 +37,4 @@ titanic-pp-py==0.0.2
 typing-utils==0.1.0
 typing_extensions==4.8.0
 urllib3==1.26.18
-yarl==1.9.2
+yarl==1.9.3
