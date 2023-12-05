@@ -18,33 +18,22 @@ async def add_beatmapset(context: Context):
     """<set_id> - Add a beatmapset to the database"""
 
     if not context.args or not context.args[0].isnumeric():
-        await context.message.channel.send(
-            f'Invalid syntax: `!{context.command} <set_id>`',
-            reference=context.message,
-            mention_author=True
-        )
-        return
-
-    set_id = int(context.args[0])
-
-    async with context.message.channel.typing():
-        if beatmapsets.fetch_one(set_id):
+        if not context.message.attachments:
             await context.message.channel.send(
-                'This beatmapset already exists!',
+                f'Invalid syntax: `!{context.command} <set_id>`',
                 reference=context.message,
                 mention_author=True
             )
             return
+
+    async def add_set(set_id):
+        if beatmapsets.fetch_one(set_id):
+            return None, 'This beatmapset already exists!'
 
         api = OssapiV1(config.OSU_API_KEY)
 
         if not (maps := api.get_beatmaps(beatmapset_id=set_id)):
-            await context.message.channel.send(
-                'Could not find that beatmapset!',
-                reference=context.message,
-                mention_author=True
-            )
-            return
+            return None, 'Could not find that beatmapset!'
 
         db_set = _add_beatmapset(set_id, maps)
         updates = list()
@@ -53,12 +42,73 @@ async def add_beatmapset(context: Context):
         with app.session.database.session as session:
             if (db_set := session.get(DBBeatmapset, set_id)) is not None:
                 updates = _fix_beatmapset(db_set)
-        
-        await context.message.channel.send(
-            f'[Beatmapset was created. ({len(updates)} edited)](http://osu.{config.DOMAIN_NAME}/s/{db_set.id})',
-            reference=context.message,
-            mention_author=True
-        )
+
+        return db_set, updates
+
+    async with context.message.channel.typing():
+        if context.message.attachments:
+            if not context.message.attachments[0].content_type.startswith('text/plain'):
+                await context.message.channel.send(
+                    f'Attach a proper beatmap list.',
+                    reference=context.message,
+                    mention_author=True
+                )
+                return
+
+            file = await context.message.attachments[0].read()
+            
+            added_count = 0
+            updates_count = 0
+            error = list()
+            
+            for set_id in file.decode().split('\n'):
+                if not set_id:
+                    break
+                if not set_id.strip().isnumeric():
+                    await context.message.channel.send(
+                        'Attach a proper beatmap list.',
+                        reference=context.message,
+                        mention_author=True
+                    )
+                    return
+                
+                set_id = int(set_id.strip())
+                db_set, updates = await add_set(set_id)
+                
+                if not db_set:
+                    error.append(str(set_id))
+                else:
+                    added_count += 1
+                    updates_count += len(updates)
+            
+            await context.message.channel.send(
+                f'Added {added_count} sets. ({updates_count} edited, {len(error)} errored out.)',
+                reference=context.message,
+                mention_author=True
+                )
+            if error:
+                await context.message.channel.send(
+                f'These beatmap could not be added:\n```{" ".join(error)}```',
+                reference=context.message,
+                mention_author=True
+                )
+        else:
+            set_id = int(context.args[0])
+            db_set, updates = await add_set(set_id)
+            
+            if not db_set:
+                await context.message.channel.send(
+                    updates,
+                    reference=context.message,
+                    mention_author=True
+                )
+                return
+            
+            await context.message.channel.send(
+                f'[Beatmapset was created. ({len(updates)} edited)](http://osu.{config.DOMAIN_NAME}/s/{db_set.id})',
+                reference=context.message,
+                mention_author=True
+            )
 
 @app.session.commands.register(['fixset'], roles=['Admin'])
 async def fix_beatmapset(context: Context):
