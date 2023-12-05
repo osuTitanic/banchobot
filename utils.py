@@ -1,3 +1,4 @@
+
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmap, DBBeatmapset
 from typing import Dict, Union, List
@@ -101,7 +102,6 @@ def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int = 9) -> 
 
     return stream.getvalue()
 
-
 def add_beatmapset(set_id, maps):
     if (response := app.session.storage.api.osz(set_id, no_video=False)):
         filesize = int(response.headers.get('Content-Length', default=0))
@@ -204,4 +204,3 @@ def fix_beatmapset(beatmapset: DBBeatmapset) -> List[DBBeatmap]:
         
         updated_beatmaps.append(beatmap)
     return updated_beatmaps
-
