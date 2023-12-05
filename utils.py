@@ -1,8 +1,11 @@
-
-from typing import Dict, Union
+from app.common.database.repositories import beatmapsets, beatmaps
+from app.common.database.objects import DBBeatmap, DBBeatmapset
+from typing import Dict, Union, List
 
 import requests
+import hashlib
 import config
+import app
 import io
 import re
 import os
@@ -97,3 +100,108 @@ def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int = 9) -> 
                 stream.write(f'{value}\r\n'.encode())
 
     return stream.getvalue()
+
+
+def add_beatmapset(set_id, maps):
+    if (response := app.session.storage.api.osz(set_id, no_video=False)):
+        filesize = int(response.headers.get('Content-Length', default=0))
+    else:
+        filesize = 0
+
+    if maps[0].video:
+        if (response := app.session.storage.api.osz(set_id, no_video=True)):
+            filesize_novideo = int(response.headers.get('Content-Length', default=0))
+        else:
+            filesize_novideo = 0
+    else:
+        filesize_novideo = 0
+
+
+    db_set = beatmapsets.create(
+        maps[0].beatmapset_id,
+        maps[0].title,
+        maps[0].artist,
+        maps[0].creator,
+        maps[0].source,
+        maps[0].tags,
+        maps[0].approved,
+        maps[0].video,
+        maps[0].storyboard,
+        maps[0].submit_date,
+        maps[0].approved_date,
+        maps[0].last_update,
+        maps[0].language_id,
+        maps[0].genre_id,
+        osz_filesize=filesize,
+        osz_filesize_novideo=filesize_novideo
+    )
+
+    for beatmap in maps:
+        beatmaps.create(
+            beatmap.beatmap_id,
+            beatmap.beatmapset_id,
+            beatmap.mode,
+            beatmap.beatmap_hash,
+            beatmap.approved,
+            beatmap.version,
+            get_beatmap_filename(beatmap.beatmap_id),
+            beatmap.submit_date,
+            beatmap.last_update,
+            beatmap.total_length,
+            beatmap.max_combo,
+            beatmap.bpm,
+            beatmap.circle_size,
+            beatmap.approach_rate,
+            beatmap.overrall_difficulty,
+            beatmap.health,
+            beatmap.star_rating
+        )
+
+    return db_set
+
+def fix_beatmapset(beatmapset: DBBeatmapset) -> List[DBBeatmap]:
+    updated_beatmaps = list()
+    for beatmap in beatmapset.beatmaps:
+        beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+        beatmap_dict = parse_beatmap_file(beatmap_file.decode())
+        beatmap_updates = {}
+
+        difficulty_attributes = {
+            'OverallDifficulty': 'od',
+            'ApproachRate': 'ar',
+            'HPDrainRate': 'hp',
+            'CircleSize': 'cs'
+        }
+
+        for key, short_key in difficulty_attributes.items():
+            if key not in beatmap_dict['Difficulty']:
+                continue
+
+            value = beatmap_dict['Difficulty'][key]
+
+            if isinstance(value, int):
+                continue
+
+            # Update value
+            beatmap_updates[short_key] = round(value) # Database
+            beatmap_dict['Difficulty'][key] = round(value) # File
+
+        if not beatmap_updates:
+            continue
+
+        # Get new file
+        content = get_beatmap_file(beatmap_dict)
+
+        # Upload to storage
+        app.session.storage.upload_beatmap_file(beatmap.id, content)
+
+        # Update beatmap hash
+        beatmap_hash = hashlib.md5(content).hexdigest()
+        beatmap_updates['md5'] = beatmap_hash
+
+        # Update database
+        beatmaps.update(beatmap.id, beatmap_updates)
+        
+        updated_beatmaps.append(beatmap)
+    return updated_beatmaps
+
