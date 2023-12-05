@@ -3,8 +3,6 @@ from app.common.database.repositories import *
 from app.common.cache import leaderboards
 from app.objects import Context
 
-from datetime import datetime, timedelta
-
 import config
 import app
 
@@ -18,7 +16,7 @@ async def restrict(context: Context):
             mention_author=True
         )
         return
-    
+
     if context.args[0].isnumeric():
         # Get internal user id
         discord_id = None
