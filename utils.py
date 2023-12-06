@@ -16,6 +16,7 @@ def setup():
         # Create required folders if not they not already exist
         os.makedirs(f'{config.DATA_PATH}/images/achievements', exist_ok=True)
         os.makedirs(f'{config.DATA_PATH}/screenshots', exist_ok=True)
+        os.makedirs(f'{config.DATA_PATH}/beatmaps', exist_ok=True)
         os.makedirs(f'{config.DATA_PATH}/replays', exist_ok=True)
         os.makedirs(f'{config.DATA_PATH}/avatars', exist_ok=True)
 
