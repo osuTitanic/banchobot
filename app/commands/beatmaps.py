@@ -1,6 +1,7 @@
 from app.common.database.objects import DBBeatmap, DBBeatmapset
 from app.common.database.repositories import beatmapsets
 from app.common.constants import DatabaseStatus
+from sqlalchemy.orm import Session
 from app.objects import Context
 from datetime import datetime
 from ossapi import OssapiV1
@@ -34,7 +35,7 @@ async def add_beatmapset(context: Context):
 
         db_set = utils.add_beatmapset(set_id, maps)
         updates = list()
-        
+
         # We need to get beatmapset from database to fix relationships
         with app.session.database.session as session:
             if (db_set := session.get(DBBeatmapset, set_id)) is not None:
@@ -53,11 +54,11 @@ async def add_beatmapset(context: Context):
                 return
 
             file = await context.message.attachments[0].read()
-            
+
             added_count = 0
             updates_count = 0
             error = list()
-            
+
             for set_id in file.decode().split('\n'):
                 if not set_id:
                     break
@@ -68,16 +69,16 @@ async def add_beatmapset(context: Context):
                         mention_author=True
                     )
                     return
-                
+
                 set_id = int(set_id.strip())
                 db_set, updates = await add_set(set_id)
-                
+
                 if not db_set:
                     error.append(str(set_id))
                 else:
                     added_count += 1
                     updates_count += len(updates)
-            
+
             await context.message.channel.send(
                 f'Added {added_count} sets. ({updates_count} edited, {len(error)} errored out.)',
                 reference=context.message,
@@ -92,7 +93,7 @@ async def add_beatmapset(context: Context):
         else:
             set_id = int(context.args[0])
             db_set, updates = await add_set(set_id)
-            
+
             if not db_set:
                 await context.message.channel.send(
                     updates,
@@ -100,7 +101,7 @@ async def add_beatmapset(context: Context):
                     mention_author=True
                 )
                 return
-            
+
             await context.message.channel.send(
                 f'[Beatmapset was created. ({len(updates)} edited)](http://osu.{config.DOMAIN_NAME}/s/{db_set.id})',
                 reference=context.message,
@@ -132,18 +133,32 @@ async def fix_beatmapset(context: Context):
                 return
             session.expunge(beatmapset)
 
-            updates = fix_beatmapset(beatmapset)
+            updates = utils.fix_beatmapset(beatmapset)
             embed = Embed(title="Beatmap updates", description="Changes:\n")
-        
+
             for updated_map in updates:
                 embed.description += f"[{updated_map.version}](http://osu.{config.DOMAIN_NAME}/b/{updated_map.id})\n"
-        
+
         await context.message.channel.send(
             embed=embed,
             reference=context.message,
             mention_author=True
         )
 
+def update_beatmapset(session: Session, set_id: int, status: int):
+        session.query(DBBeatmapset) \
+            .filter(DBBeatmapset.id == set_id) \
+            .update({
+                'status': status,
+                'last_update': datetime.now()
+            })
+        rows_changed = session.query(DBBeatmap) \
+            .filter(DBBeatmap.set_id == set_id) \
+            .update({
+                'status': status,
+                'last_update': datetime.now()
+            })
+        return rows_changed
 
 @app.session.commands.register(['modset'], roles=['BAT', 'Admin'])
 async def change_beatmapset_status(context: Context):
@@ -196,28 +211,13 @@ async def change_beatmapset_status(context: Context):
             return
         status = statuses[context.args[index].lower()]
 
-    def update_beatmapset(session, set_id: int, status: int):
-        session.query(DBBeatmapset) \
-            .filter(DBBeatmapset.id == set_id) \
-            .update({
-                'status': status,
-                'last_update': datetime.now()
-            })
-        rows_changed = session.query(DBBeatmap) \
-            .filter(DBBeatmap.set_id == set_id) \
-            .update({
-                'status': status,
-                'last_update': datetime.now()
-            })
-        return rows_changed
-
     async with context.message.channel.typing():
         with app.session.database.session as session:
             if context.message.attachments:
 
                 file = await context.message.attachments[0].read()
                 rows_changed = 0
-                            
+
                 for set_id in file.decode().split('\n'):
                     if not set_id:
                         break
@@ -233,11 +233,11 @@ async def change_beatmapset_status(context: Context):
             else:
                 set_id = int(context.args[0])
                 rows_changed = update_beatmapset(session, set_id, status)
-            
+
             session.commit()
-        
+
         await context.message.channel.send(
-            f'Changed {rows_changed} beatmaps.',
+            f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
             reference=context.message,
             mention_author=True
         )
