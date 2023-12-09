@@ -46,10 +46,15 @@ class ViewReplayButton(View):
 
 @app.session.commands.register(["recent", "last"])
 async def recent(context: Context):
-    """Displays your last play"""
+    """<username> Displays your last play"""
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send("You don't have an account linked!")
         return
+
+    if len(context.args):
+        if not (user := users.fetch_by_name(context.args[0])):
+            await context.message.channel.send("User not found!")
+            return
 
     score = scores.fetch_recent_all(user_id=user.id, limit=1)
 
