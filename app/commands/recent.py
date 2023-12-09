@@ -87,7 +87,7 @@ async def recent(context: Context):
     embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {nscore:,}"
     replay = None
 
-    if app.session.storage.get_replay(score.id):
+    if score.mode == 0 and app.session.storage.get_replay(score.id):
         replay = ViewReplayButton(score)
 
     await context.message.channel.send(
