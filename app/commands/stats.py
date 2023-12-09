@@ -43,17 +43,19 @@ async def stats(context: Context):
     )
 
     pp_rank = leaderboards.global_rank(user.id, mode)
+    ppv1_rank = leaderboards.ppv1_rank(user.id, mode)
     score_rank = leaderboards.score_rank(user.id, mode)
+    tscore_rank = leaderboards.total_score_rank(user.id, mode)
 
     embed.add_field(name="Ranked score", value=f"{stats.rscore:,} (#{score_rank})")
-    embed.add_field(name="Total score", value=f"{stats.tscore:,}")
+    embed.add_field(name="Total score", value=f"{stats.tscore:,} (#{tscore_rank})")
     embed.add_field(name="Total hits", value=f"{stats.total_hits:,}")
     embed.add_field(name="Play count", value=f"{stats.playcount:,}")
     embed.add_field(name="Play time", value=f"{stats.playtime/60/60:,.2f}h")
     embed.add_field(name="Replay views", value=f"{stats.replay_views:,}")
     embed.add_field(name="Accuracy", value=f"{stats.acc*100:.2f}%")
     embed.add_field(name="Max combo", value=f"{stats.max_combo:,}")
-    embed.add_field(name="Performance points", value=f"{stats.pp:.0f}pp (#{pp_rank})")
+    embed.add_field(name="Performance points", value=f"{stats.pp:.0f}pp, {stats.ppv1:.0f}ppv1 (#{pp_rank}, #{ppv1_rank})")
     embed.add_field(name="SS/SS+", value=f"{stats.x_count}/{stats.xh_count}")
     embed.add_field(name="S/S+", value=f"{stats.s_count}/{stats.sh_count}")
     embed.add_field(
