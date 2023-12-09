@@ -13,7 +13,7 @@ import app
 
 @app.session.commands.register(["stats", "profile", "show"])
 async def stats(context: Context):
-    """<std/taiko/ctb/mania> <username> - Displays your statistics"""
+    """<std/taiko/ctb/mania> (username) - Displays your statistics"""
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send("You don't have an account linked!")
         return
@@ -21,7 +21,7 @@ async def stats(context: Context):
     mode = user.preferred_mode
     modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
 
-    if len(context.args):
+    if context.args:
         if context.args[0] in modes:
             mode = modes[context.args[0]]
         else:
