@@ -13,7 +13,7 @@ import app
 
 @app.session.commands.register(["stats", "profile", "show"])
 async def stats(context: Context):
-    """<std/taiko/ctb/mania> - Displays your statistics"""
+    """<std/taiko/ctb/mania> <username> - Displays your statistics"""
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send("You don't have an account linked!")
         return
@@ -29,6 +29,10 @@ async def stats(context: Context):
                 f"Wrong mode! Available modes: {', '.join(modes.keys())}"
             )
             return
+        if len(context.args) > 1:
+            if not (user := users.fetch_by_name(context.args[1])):
+                await context.message.channel.send("User not found!")
+                return
 
     stats: DBStats = [stats for stats in user.stats if stats.mode == mode][0]
 
