@@ -11,7 +11,7 @@ import app
 
 @app.session.commands.register(["top"])
 async def top(context: Context):
-    """<std/taiko/ctb/mania> <username> - Displays your top plays"""
+    """<std/taiko/ctb/mania> (username) - Display the top plays of yourself or another player"""
 
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
         await context.message.channel.send("You don't have an account linked!")
