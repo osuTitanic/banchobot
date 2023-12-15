@@ -30,7 +30,7 @@ async def pp_record(context: Context):
     def format_score(score: DBScore):
         if not score:
             return "No score for this mode :("
-        score_str = f"{score.beatmap.full_name} +{Mods(score.mods).short}\n{score.pp}pp {score.acc*100:.0f}%"
+        score_str = f"{score.beatmap.full_name} +{Mods(score.mods).short}\n{score.pp}pp {score.acc*100:.2f}%"
         score_str += f" {score.grade} [{score.n300}/{score.n100}/{score.n50}/{score.nMiss}]"
         user_str = f"[{score.user.name}](http://osu.{config.DOMAIN_NAME}/u/{score.user_id})"
         return f"{score_str} by {user_str}"
