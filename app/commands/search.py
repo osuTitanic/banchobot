@@ -105,7 +105,7 @@ async def search(context: Context):
             f'[{context.message.author}] -> Requesting beatmap: "{query}"'
         )
 
-        if len(query) <= 3:
+        if len(query) <= 2:
             await context.message.channel.send(
                 'Query too short!'
             )
