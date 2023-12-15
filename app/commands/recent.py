@@ -52,7 +52,7 @@ async def recent(context: Context):
         return
 
     if context.args:
-        if not (user := users.fetch_by_name(context.args[0])):
+        if not (user := users.fetch_by_name_extended(context.args[0])):
             await context.message.channel.send("User not found!")
             return
 

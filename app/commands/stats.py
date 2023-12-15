@@ -30,7 +30,7 @@ async def stats(context: Context):
             )
             return
         if len(context.args) > 1:
-            if not (user := users.fetch_by_name(context.args[1])):
+            if not (user := users.fetch_by_name_extended(context.args[1])):
                 await context.message.channel.send("User not found!")
                 return
 
