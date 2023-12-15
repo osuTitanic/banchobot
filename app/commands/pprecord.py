@@ -1,5 +1,5 @@
 
-from app.common.database.objects import DBScore, DBBeatmap
+from app.common.database.objects import DBScore
 from app.common.constants import Mods
 from app.objects import Context
 
@@ -30,8 +30,7 @@ async def pp_record(context: Context):
     def format_score(score: DBScore):
         if not score:
             return "No score for this mode :("
-        beatmap: DBBeatmap = score.beatmap
-        score_str = f"{beatmap.full_name} +{Mods(score.mods).short}\n{score.pp}pp {score.acc*100:.0f}%"
+        score_str = f"{score.beatmap.full_name} +{Mods(score.mods).short}\n{score.pp}pp {score.acc*100:.0f}%"
         score_str += f" {score.grade} [{score.n300}/{score.n100}/{score.n50}/{score.nMiss}]"
         user_str = f"[{score.user.name}](http://osu.{config.DOMAIN_NAME}/u/{score.user_id})"
         return f"{score_str} by {user_str}"
@@ -54,7 +53,8 @@ async def pp_record(context: Context):
 
     mania = top_score(mode=3, mods=0)
     
-    embed = Embed(title="PP Records")
+    embed = Embed(title="PP Records", color=Color.blue())
+
     embed.add_field(name="Standard VN", value=format_score(standard[0]), inline=False)
     embed.add_field(name="Standard RX", value=format_score(standard[1]), inline=False)
     embed.add_field(name="Standard AP", value=format_score(standard[2]), inline=False)
