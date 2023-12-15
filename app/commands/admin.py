@@ -6,7 +6,7 @@ from app.objects import Context
 import config
 import app
 
-@app.session.commands.register(['restrict'], roles=['Admin'])
+@app.session.commands.register(['restrict', 'ban'], roles=['Admin'])
 async def restrict(context: Context):
     """<user_id> <reason> - Restrict user"""
     if not context.args:
@@ -86,7 +86,7 @@ async def restrict(context: Context):
             mention_author=True
         )
             
-@app.session.commands.register(['unrestrict'], roles=['Admin'])
+@app.session.commands.register(['unrestrict', 'unban'], roles=['Admin'])
 async def unrestrict(context: Context):
     """<user_id> - Unrestrict user"""
     if not context.args:
