@@ -8,3 +8,4 @@ from . import beatmaps
 from . import leaderboard
 from . import admin
 from . import changepfp
+from . import pprecord
