@@ -11,21 +11,21 @@ from typing import List
 import config
 import app
 
+def top_score(mode: int, mods: int, exclude: List[int] = []):
+    with app.session.database.session as session:
+        query = session.query(DBScore).filter(
+            DBScore.mode == mode,
+            DBScore.status == 3,
+        )
+        if mods:
+            query = query.filter(DBScore.mods.op("&")(mods) > 0)
+        for mod in exclude:
+            query = query.filter(DBScore.mods.op("&")(mod) == 0)
+        return query.order_by(DBScore.pp.desc()).first()
+
 @app.session.commands.register(["pprecord"])
 async def pp_record(context: Context):
     """Displays pp record"""
-    
-    def top_score(mode: int, mods: int, exclude: List[int] = []):
-        with app.session.database.session as session:
-            query = session.query(DBScore).filter(
-                DBScore.mode == mode,
-                DBScore.status == 3,
-            )
-            if mods:
-                query = query.filter(DBScore.mods.op("&")(mods) > 0)
-            for mod in exclude:
-                query = query.filter(DBScore.mods.op("&")(mod) == 0)
-            return query.order_by(DBScore.pp.desc()).first()
 
     def format_score(score: DBScore):
         if not score:
