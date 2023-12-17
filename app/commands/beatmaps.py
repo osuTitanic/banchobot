@@ -11,7 +11,7 @@ import config
 import utils
 import app
 
-@app.session.commands.register(['addset'], roles=['Admin'])
+@app.session.commands.register(['addset'], roles=['Admin', 'BAT'])
 async def add_beatmapset(context: Context):
     """<set_id> - Add a beatmapset to the database"""
 
@@ -108,7 +108,7 @@ async def add_beatmapset(context: Context):
                 mention_author=True
             )
 
-@app.session.commands.register(['fixset'], roles=['Admin'])
+@app.session.commands.register(['fixset'], roles=['Admin', 'BAT'])
 async def fix_beatmapset(context: Context):
     """<set_id> - Fix the beatmap files for a beatmapset"""
 
