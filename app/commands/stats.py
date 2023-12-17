@@ -34,6 +34,10 @@ async def stats(context: Context):
                 await context.message.channel.send("User not found!")
                 return
 
+    if not user.stats:
+        await context.message.channel.send("Please log in to bancho first, to see your stats!")
+        return
+
     stats: DBStats = [stats for stats in user.stats if stats.mode == mode][0]
 
     embed = Embed(
