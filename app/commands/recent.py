@@ -1,6 +1,7 @@
 
 from app.common.database.repositories import users, scores
 from app.common.database.objects import DBScore
+from app.common.helpers import performance
 from app.common.constants import Mods
 from app.objects import Context
 from typing import Optional
@@ -75,6 +76,12 @@ async def recent(context: Context):
     nscore = score.total_score
     mods = Mods(score.mods).short
 
+    if_fc = ""
+    if score.nMiss > 0 or (score.beatmap.max_combo - score.max_combo) > 10:
+        score.nMiss = 0
+        score.max_combo = score.beatmap.max_combo
+        if_fc = f"({performance.calculate_ppv2(score):.0f}pp if FC)"
+
     embed = Embed(
         title=f"{score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods}",
         url=f"http://osu.{config.DOMAIN_NAME}/b/{score.beatmap_id}",
@@ -89,7 +96,7 @@ async def recent(context: Context):
     if score.status < 2:
         rank = f"F ({int((score.failtime/1000)/score.beatmap.total_length*100)}%)"
 
-    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {nscore:,}"
+    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {if_fc} {nscore:,}"
     replay = None
 
     if score.mode == 0 and app.session.storage.get_replay(score.id):
