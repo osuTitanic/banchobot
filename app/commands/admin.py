@@ -52,28 +52,7 @@ async def restrict(context: Context):
             mention_author=True
         )
     else:
-        leaderboards.remove(
-            user.id,
-            user.country
-        )
-        stats.delete_all(user.id)
-        scores.hide_all(user.id)
-
-        # Update hardware
-        clients.update_all(user.id, {'banned': True})
-
-        # Add entry inside infringements table
-        infringements.create(
-            user.id,
-            action=0,
-            length=None,
-            description=reason,
-            is_permanent=True
-        )
-
-        users.update(user.id, {'restricted': True, 'permissions': 0})
-
-        # Kick client from bancho
+        # Let bancho handle restriction
         app.session.events.submit(
             'restrict',
             user_id=user.id,
