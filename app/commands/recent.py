@@ -79,7 +79,8 @@ async def recent(context: Context):
     if_fc = ""
     if score.nMiss > 0 or (score.beatmap.max_combo - score.max_combo) > 10:
         score.nMiss = 0
-        score.max_combo = score.beatmap.max_combo
+        if score.mode == score.beatmap.mode:
+            score.max_combo = score.beatmap.max_combo
         if_fc = f"({performance.calculate_ppv2(score):.0f}pp if FC)"
 
     embed = Embed(
