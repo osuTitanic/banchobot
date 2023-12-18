@@ -11,11 +11,11 @@ from typing import List
 import config
 import app
 
-def top_score(mode: int, mods: int, exclude: List[int] = []):
-    with app.session.database.session as session:
+def top_score(mode: int, mods: int, exclude: List[int] = []) -> DBScore:
+    with app.session.database.managed_session() as session:
         query = session.query(DBScore).filter(
             DBScore.mode == mode,
-            DBScore.status == 3,
+            DBScore.status == 3
         )
         if mods:
             query = query.filter(DBScore.mods.op("&")(mods) > 0)
