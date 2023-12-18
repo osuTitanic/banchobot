@@ -1,4 +1,4 @@
-
+from app.common.database.repositories import scores
 from app.common.database.objects import DBScore
 from app.common.constants import Mods
 from app.objects import Context
@@ -25,7 +25,7 @@ def top_score(mode: int, mods: int, exclude: List[int] = []):
 
 @app.session.commands.register(["pprecord"])
 async def pp_record(context: Context):
-    """Displays pp record"""
+    """(mods) - Displays pp record"""
 
     def format_score(score: DBScore):
         if not score:
@@ -34,13 +34,27 @@ async def pp_record(context: Context):
         score_str += f" {score.grade} [{score.n300}/{score.n100}/{score.n50}/{score.nMiss}]"
         user_str = f"[{score.user.name}](http://osu.{config.DOMAIN_NAME}/u/{score.user_id})"
         return f"{score_str} by {user_str}"
-    
+
+    if context.args:
+        embed = Embed(title="PP Records", color=Color.blue())
+        records = [scores.fetch_pp_record(mode, Mods.from_string(context.args[0])) for mode in range(4)]
+        if records[0]:
+            embed.add_field(name="Standard", value=format_score(records[0]))
+        if records[1]:
+            embed.add_field(name="Taiko", value=format_score(records[1]))
+        if records[2]:
+            embed.add_field(name="Catch the beat", value=format_score(records[2]))
+        if records[3]:
+            embed.add_field(name="Mania", value=format_score(records[3])) 
+        await context.message.reply(embed=embed)
+        return
+
     standard = (
         top_score(mode=0, mods=0, exclude=[Mods.Relax, Mods.Autopilot]),
         top_score(mode=0, mods=Mods.Relax),
         top_score(mode=0, mods=Mods.Autopilot),
     )
-    
+
     taiko = (
         top_score(mode=1, mods=0, exclude=[Mods.Relax]),
         top_score(mode=1, mods=Mods.Relax),
@@ -51,10 +65,12 @@ async def pp_record(context: Context):
         top_score(mode=2, mods=Mods.Relax),
     )
 
-    mania = top_score(mode=3, mods=0)
-    
-    embed = Embed(title="PP Records", color=Color.blue())
+    mania = top_score(
+        mode=3,
+        mods=0
+    )
 
+    embed = Embed(title="PP Records", color=Color.blue())
     embed.add_field(name="Standard VN", value=format_score(standard[0]), inline=False)
     embed.add_field(name="Standard RX", value=format_score(standard[1]), inline=False)
     embed.add_field(name="Standard AP", value=format_score(standard[2]), inline=False)
