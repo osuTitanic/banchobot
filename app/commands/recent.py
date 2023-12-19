@@ -80,18 +80,20 @@ async def recent(context: Context):
     nscore = score.total_score
     mods = Mods(score.mods).short
 
-    if_fc = ""
+    if_fc_fmt = ""
     fc_pp, stars, lazer = get_difficulty_info(score)
     
     if score.nMiss > 0 or (score.beatmap.max_combo - score.max_combo) > 10:
-        if_fc = f"({fc_pp:.2f}pp if FC)"
+        if_fc_fmt = f"({fc_pp:.2f}pp if FC)"
     
     stars_fmt = f"{stars:0.1f}⭐"
     if lazer:
         stars_fmt += f"/{lazer:0.1f}⭐"
-        
+    
+    mode_fmt = ('osu!', 'Taiko', 'Ctb', 'Mania')[score.mode]
+    
     embed = Embed(
-        title=f"[{stars_fmt}] {score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods}",
+        title=f"[{stars_fmt}] {score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods} ({mode_fmt})",
         url=f"http://osu.{config.DOMAIN_NAME}/b/{score.beatmap_id}",
         color=Color.blue(),
     )
@@ -104,7 +106,7 @@ async def recent(context: Context):
     if score.status < 2:
         rank = f"F ({int((score.failtime/1000)/score.beatmap.total_length*100)}%)"
 
-    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {if_fc} {nscore:,}"
+    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {if_fc_fmt} {nscore:,}"
     replay = None
 
     if score.mode == 0 and app.session.storage.get_replay(score.id):
@@ -165,6 +167,6 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
         if score.mods & Mods.Relax:
             lazer_sr = result.difficulty.aim * 0.9
         elif score.mods & Mods.Autopilot:
-            lazer_sr = result.difficulty.speed * 0.9
+            lazer_sr = result.difficulty.speed * 0.5
 
     return result.pp, result.difficulty.stars, lazer_sr
