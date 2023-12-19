@@ -169,9 +169,20 @@ async def rename(context: Context):
             mention_author=True
         )
         return
+    
+    safe_name = username.lower().replace(' ', '_')
+    
+    if users.fetch_by_safe_name(safe_name):
+        await context.message.channel.send(
+            'Username is taken!',
+            reference=context.message,
+            mention_author=True
+        )
+        return
 
     names.create(user.id, user.name)
-    users.update(user.id, {'name': username})
+    users.update(user.id, {'name': username, 'safe_name': safe_name})
+
     await context.message.channel.send(
         'User renamed.',
         reference=context.message,
