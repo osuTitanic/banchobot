@@ -4,7 +4,8 @@ from app.common.database.objects import DBScore
 from app.common.helpers import performance
 from app.common.constants import Mods
 from app.objects import Context
-from typing import Optional
+
+from typing import Optional, Tuple
 
 from discord.ui import View, Button
 from discord import ButtonStyle
@@ -12,8 +13,11 @@ from discord import Interaction
 from discord import Embed
 from discord import Color
 
+from titanic_pp_py import Calculator, Beatmap
+
 import discord
 import config
+import math
 import app
 import io
 
@@ -77,14 +81,17 @@ async def recent(context: Context):
     mods = Mods(score.mods).short
 
     if_fc = ""
+    fc_pp, stars, lazer = get_difficulty_info(score)
+    
     if score.nMiss > 0 or (score.beatmap.max_combo - score.max_combo) > 10:
-        score.nMiss = 0
-        if score.mode == score.beatmap.mode:
-            score.max_combo = score.beatmap.max_combo
-        if_fc = f"({performance.calculate_ppv2(score):.0f}pp if FC)"
-
+        if_fc = f"({fc_pp:.0f}pp if FC)"
+    
+    stars_fmt = f"{stars:0.1f}⭐"
+    if lazer:
+        stars_fmt += f"/{lazer:0.1f}⭐"
+        
     embed = Embed(
-        title=f"{score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods}",
+        title=f"[{stars_fmt}] {score.beatmap.beatmapset.full_name} [{score.beatmap.version}] +{mods}",
         url=f"http://osu.{config.DOMAIN_NAME}/b/{score.beatmap_id}",
         color=Color.blue(),
     )
@@ -97,7 +104,7 @@ async def recent(context: Context):
     if score.status < 2:
         rank = f"F ({int((score.failtime/1000)/score.beatmap.total_length*100)}%)"
 
-    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {if_fc} {nscore:,}"
+    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.0f}pp {if_fc} {nscore:,}"
     replay = None
 
     if score.mode == 0 and app.session.storage.get_replay(score.id):
@@ -107,3 +114,61 @@ async def recent(context: Context):
         embed=embed, reference=context.message, mention_author=True,
         view=replay
     )
+
+
+def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
+    # fc_pp, star rating, approximate lazer sr (rx/ap)
+    beatmap_file = app.session.storage.get_beatmap(score.beatmap_id)
+
+    if not beatmap_file:
+        app.session.logger.error(
+            f'pp calculation failed: Beatmap file was not found! ({score.user_id})'
+        )
+        return 0.0, 0.0, 0.0
+
+    mods = Mods(score.mods)
+
+    if Mods.Nightcore in mods and not Mods.DoubleTime in mods:
+        # NC somehow only appears with DT enabled at the same time...?
+        # https://github.com/ppy/osu-api/wiki#mods
+        mods |= Mods.DoubleTime
+
+    if Mods.Perfect in mods and not Mods.SuddenDeath in mods:
+        # The same seems to be the case for PF & SD
+        mods |= Mods.SuddenDeath
+
+    score.mods = mods.value
+
+    bm = Beatmap(bytes=beatmap_file)
+
+    calc = Calculator(
+        mode           = score.mode,
+        mods           = score.mods,
+        n_geki         = score.nGeki,
+        n_katu         = score.nKatu,
+        n300           = score.n300,
+        n100           = score.n100,
+        n50            = score.n50
+    )
+
+    if not (result := calc.performance(bm)):
+        app.session.logger.error(
+            'pp calculation failed: No result'
+        )
+        return 0.0, 0.0, 0.0
+
+    if math.isnan(result.pp):
+        app.session.logger.error(
+            'pp calculation failed: NaN pp'
+        )
+        return 0.0, 0.0, 0.0
+
+    lazer_sr = 0.0
+    
+    if score.mode == 0:
+        if score.mods & Mods.Relax:
+            lazer_sr = result.difficulty.aim * 0.9
+        elif score.mods & Mods.Autopilot:
+            lazer_sr = result.difficulty.speed * 0.9
+
+    return result.pp, result.difficulty.stars, lazer_sr
