@@ -30,7 +30,7 @@ async def pp_record(context: Context):
     def format_score(score: DBScore):
         if not score:
             return "No score for this mode :("
-        score_str = f"{score.beatmap.full_name} +{Mods(score.mods).short}\n{score.pp}pp {score.acc*100:.2f}%"
+        score_str = f"{score.beatmap.full_name} +{Mods(score.mods).short}\n{score.pp:.2f}pp {score.acc*100:.2f}%"
         score_str += f" {score.grade} [{score.n300}/{score.n100}/{score.n50}/{score.nMiss}]"
         user_str = f"[{score.user.name}](http://osu.{config.DOMAIN_NAME}/u/{score.user_id})"
         return f"{score_str} by {user_str}"
@@ -39,13 +39,13 @@ async def pp_record(context: Context):
         embed = Embed(title="PP Records", color=Color.blue())
         records = [scores.fetch_pp_record(mode, Mods.from_string(context.args[0])) for mode in range(4)]
         if records[0]:
-            embed.add_field(name="Standard", value=format_score(records[0]))
+            embed.add_field(name="Standard", value=format_score(records[0]), inline=False)
         if records[1]:
-            embed.add_field(name="Taiko", value=format_score(records[1]))
+            embed.add_field(name="Taiko", value=format_score(records[1]), inline=False)
         if records[2]:
-            embed.add_field(name="Catch the beat", value=format_score(records[2]))
+            embed.add_field(name="Catch the beat", value=format_score(records[2]), inline=False)
         if records[3]:
-            embed.add_field(name="Mania", value=format_score(records[3])) 
+            embed.add_field(name="Mania", value=format_score(records[3]), inline=False) 
         await context.message.reply(embed=embed)
         return
 
