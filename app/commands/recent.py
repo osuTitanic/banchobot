@@ -167,6 +167,6 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
         if score.mods & Mods.Relax:
             lazer_sr = result.difficulty.aim * 0.9
         elif score.mods & Mods.Autopilot:
-            lazer_sr = result.difficulty.speed * 0.9
+            lazer_sr = result.difficulty.speed * 0.5
 
     return result.pp, result.difficulty.stars, lazer_sr
