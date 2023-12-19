@@ -84,7 +84,7 @@ async def recent(context: Context):
     fc_pp, stars, lazer = get_difficulty_info(score)
     
     if score.nMiss > 0 or (score.beatmap.max_combo - score.max_combo) > 10:
-        if_fc = f"({fc_pp:.0f}pp if FC)"
+        if_fc = f"({fc_pp:.2f}pp if FC)"
     
     stars_fmt = f"{stars:0.1f}⭐"
     if lazer:
@@ -104,7 +104,7 @@ async def recent(context: Context):
     if score.status < 2:
         rank = f"F ({int((score.failtime/1000)/score.beatmap.total_length*100)}%)"
 
-    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.0f}pp {if_fc} {nscore:,}"
+    embed.description = f"{rank} {max_combo}/{score.beatmap.max_combo} {accuracy*100:.2f}% [{n300}/{n100}/{n50}/{nmiss}] {pp:.2f}pp {if_fc} {nscore:,}"
     replay = None
 
     if score.mode == 0 and app.session.storage.get_replay(score.id):
@@ -133,10 +133,6 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
         # https://github.com/ppy/osu-api/wiki#mods
         mods |= Mods.DoubleTime
 
-    if Mods.Perfect in mods and not Mods.SuddenDeath in mods:
-        # The same seems to be the case for PF & SD
-        mods |= Mods.SuddenDeath
-
     score.mods = mods.value
 
     bm = Beatmap(bytes=beatmap_file)
@@ -157,7 +153,7 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
         )
         return 0.0, 0.0, 0.0
 
-    if math.isnan(result.pp):
+    if math.isnan(result.pp) or math.isinf(result.pp):
         app.session.logger.error(
             'pp calculation failed: NaN pp'
         )
