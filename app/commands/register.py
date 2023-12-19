@@ -131,21 +131,6 @@ async def create_account(context: Context):
             )
 
             try:
-                # Try to get profile picture
-                r = app.session.requests.get(author.avatar.url)
-                r.raise_for_status()
-
-                app.session.storage.upload_avatar(
-                    user.id,
-                    r.content
-                )
-            except Exception as e:
-                app.session.logger.warning(
-                    f'[{author}] -> Failed to get profile picture from discord.',
-                    exc_info=e
-                )
-
-            try:
                 # Add "Member" role
                 if type(context.message.channel) is discord.DMChannel:
                     guild = app.session.bot.guilds[0]
