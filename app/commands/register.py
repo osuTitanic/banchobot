@@ -1,5 +1,6 @@
 
 from app.common.database.repositories import users
+from app.common.constants.regexes import USERNAME
 from discord.errors import Forbidden
 from app.objects import Context
 
@@ -62,16 +63,17 @@ async def create_account(context: Context):
 
             username = msg.content.strip()
             safe_name = username.lower() \
-                                .replace(' ', '_')
+                    .replace(' ', '_')
 
-            # TODO: Check and remove invalid characters
+            if not USERNAME.match(username):
+                await dm.send('Your username has invalid characters. Please try again!')
+                continue
 
-            # Check if user already exists
             if users.fetch_by_safe_name(safe_name):
                 await dm.send('A user with that name already exists. Please try again!')
                 continue
-            else:
-                break
+
+            break
 
         app.session.logger.info(
             f'[{author}] -> Selcted username "{username}"'
