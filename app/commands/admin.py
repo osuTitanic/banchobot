@@ -1,9 +1,6 @@
 
 from app.common.database.repositories import *
-from app.common.cache import leaderboards
 from app.objects import Context
-
-import config
 import app
 
 @app.session.commands.register(['restrict', 'ban'], roles=['Admin'])
@@ -124,6 +121,10 @@ async def unrestrict(context: Context):
     # Unrestrict HWID
     clients.update_all(user.id, {'banned': False})
     users.update(user.id, {'restricted': False, 'permissions': 5})
+
+    # Add user to players & supporters group
+    groups.create_entry(user.id, 999)
+    groups.create_entry(user.id, 1000)
     
     await context.message.channel.send(
         f'User unrestricted.',
