@@ -29,7 +29,6 @@ OSU_API_KEY = os.environ.get('OSU_API_KEY')
 DOMAIN_NAME = os.environ.get('DOMAIN_NAME')
 
 APPROVED_MAP_REWARDS = eval(os.environ.get('APPROVED_MAP_REWARDS', 'False').capitalize())
-FREE_SUPPORTER = eval(os.environ.get('FREE_SUPPORTER', 'True').capitalize())
 S3_ENABLED = eval(os.environ.get('ENABLE_S3', 'True').capitalize())
 DEBUG = eval(os.environ.get('DEBUG', 'False').capitalize())
 

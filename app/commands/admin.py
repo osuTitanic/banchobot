@@ -123,7 +123,7 @@ async def unrestrict(context: Context):
 
     # Unrestrict HWID
     clients.update_all(user.id, {'banned': False})
-    users.update(user.id, {'restricted': False, 'permissions': 5 if config.FREE_SUPPORTER else 1})
+    users.update(user.id, {'restricted': False, 'permissions': 5})
     
     await context.message.channel.send(
         f'User unrestricted.',
