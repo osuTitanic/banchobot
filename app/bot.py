@@ -5,6 +5,7 @@ from discord.utils import get
 
 import discord
 import config
+import shlex
 import app
 
 class BanchoBot(discord.Client):
@@ -21,7 +22,7 @@ class BanchoBot(discord.Client):
             return
 
         # Parse command
-        trigger, *args = message.content.strip()[1:].split()
+        trigger, *args = shlex.split(message.content.strip()[1:])
 
         app.session.logger.info(
             f'[{message.author}] -> {config.BOT_PREFIX}{trigger}: {args}'
