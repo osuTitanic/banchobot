@@ -81,14 +81,12 @@ async def recent(context: Context):
     mods = Mods(score.mods).short
 
     if_fc_fmt = ""
-    fc_pp, stars, lazer = get_difficulty_info(score)
+    fc_pp, stars = get_difficulty_info(score)
     
     if score.nMiss > 0 or (score.beatmap.max_combo - score.max_combo) > 10:
         if_fc_fmt = f"({fc_pp:.2f}pp if FC)"
     
     stars_fmt = f"{stars:0.1f}⭐"
-    if lazer:
-        stars_fmt += f"/{lazer:0.1f}⭐"
     
     mode_fmt = ('osu!', 'Taiko', 'Ctb', 'Mania')[score.mode]
     
@@ -119,14 +117,14 @@ async def recent(context: Context):
 
 
 def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
-    # fc_pp, star rating, approximate lazer sr (rx/ap)
+    # fc_pp, star rating
     beatmap_file = app.session.storage.get_beatmap(score.beatmap_id)
 
     if not beatmap_file:
         app.session.logger.error(
             f'pp calculation failed: Beatmap file was not found! ({score.user_id})'
         )
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0
 
     mods = Mods(score.mods)
 
@@ -153,20 +151,12 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
         app.session.logger.error(
             'pp calculation failed: No result'
         )
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0
 
     if math.isnan(result.pp) or math.isinf(result.pp):
         app.session.logger.error(
             'pp calculation failed: NaN pp'
         )
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0
 
-    lazer_sr = 0.0
-    
-    if score.mode == 0:
-        if score.mods & Mods.Relax:
-            lazer_sr = result.difficulty.aim * 0.9
-        elif score.mods & Mods.Autopilot:
-            lazer_sr = result.difficulty.speed * 0.5
-
-    return result.pp, result.difficulty.stars, lazer_sr
+    return result.pp, result.difficulty.stars
