@@ -118,7 +118,7 @@ async def create_account(context: Context):
                 country='XX',
                 activated=True,
                 discord_id=author.id,
-                permissions=1 if not config.FREE_SUPPORTER else 5
+                permissions=5
             )
 
             if not user:
