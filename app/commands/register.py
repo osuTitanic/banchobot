@@ -1,5 +1,5 @@
 
-from app.common.database.repositories import users
+from app.common.database.repositories import users, groups
 from app.common.constants.regexes import USERNAME
 from discord.errors import Forbidden
 from app.objects import Context
@@ -7,7 +7,6 @@ from app.objects import Context
 import asyncio
 import hashlib
 import discord
-import config
 import bcrypt
 import app
 
@@ -120,6 +119,10 @@ async def create_account(context: Context):
                 discord_id=author.id,
                 permissions=5
             )
+
+            # Give user player & supporter permissions
+            groups.create_entry(user.id, 999)
+            groups.create_entry(user.id, 1000)
 
             if not user:
                 app.session.logger.warning(f'[{author}] -> Failed to register user.')
