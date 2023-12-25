@@ -101,6 +101,26 @@ async def create_account(context: Context):
                 f'Account was linked to: {msg.author.name} ({msg.author.id})'
             )
 
+            try:
+                # Add "Member" role
+                if type(context.message.channel) is discord.DMChannel:
+                    guild = app.session.bot.guilds[0]
+                    member = guild.get_member(context.message.author.id)
+
+                    await member.add_roles(
+                        discord.utils.get(guild.roles, name='Member')
+                    )
+
+                else:
+                    await context.message.author.add_roles(
+                        discord.utils.get(author.guild.roles, name='Member')
+                    )
+            except Exception as e:
+                app.session.logger.warning(
+                    f'[{author}] -> Failed to assign role: {e}',
+                    exc_info=e
+                )
+
             await msg.channel.send(
                 "Successfully linked your account.",
                 reference=msg,
