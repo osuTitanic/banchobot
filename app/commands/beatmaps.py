@@ -63,12 +63,8 @@ async def add_beatmapset(context: Context):
                 if not set_id:
                     break
                 if not set_id.strip().isnumeric():
-                    await context.message.channel.send(
-                        'Attach a proper beatmap list.',
-                        reference=context.message,
-                        mention_author=True
-                    )
-                    return
+                    error.append(set_id)
+                    continue
 
                 set_id = int(set_id.strip())
                 db_set, updates = await add_set(set_id)
