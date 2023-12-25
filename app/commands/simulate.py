@@ -7,6 +7,7 @@ import app
 
 @app.session.commands.register(["simulate", "pp"])
 async def simulate(context: Context):
+    """Simulate pp for a beatmap"""
     possible_args = ('id', 'mods', 'mode', 'combo', 'n300', 'n100', 'n50', 'geki', 'katu', 'miss')
     msg = context.message.content.split(" ")[1:]
     args = {}
