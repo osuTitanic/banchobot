@@ -8,7 +8,7 @@ import app
 @app.session.commands.register(["simulate", "pp"])
 async def simulate(context: Context):
     """Simulate pp for a beatmap"""
-    possible_args = ('id', 'mods', 'mode', 'combo', 'n300', 'n100', 'n50', 'geki', 'katu', 'miss')
+    possible_args = ('id', 'acc', 'mods', 'mode', 'combo', 'n300', 'n100', 'n50', 'geki', 'katu', 'miss')
     msg = context.message.content.split(" ")[1:]
     args = {}
 
@@ -27,12 +27,16 @@ async def simulate(context: Context):
 
         if msg[x][1:] == "mods":
             args['mods'] = Mods.from_string(msg[x+1])
-
+        elif msg[x][1:] == "acc":
+            try:
+                args['acc'] = float(msg[x+1])
+            except ValueError:
+                await context.message.reply(f"Arguments must be numeric!")
+                return
         else:
             if not msg[x+1].isnumeric():
                 await context.message.reply(f"Arguments must be numeric!")
                 return
-
             args[msg[x][1:]] = int(msg[x+1])
 
     if not 'id' in args:
@@ -44,7 +48,8 @@ async def simulate(context: Context):
         return
 
     calc = Calculator(mode=args['mode'] if 'mode' in args else 0)
-
+    if 'acc' in args:
+        calc.set_acc(args['acc'])
     if 'mods' in args:
         calc.set_mods(args['mods'])
     if 'combo' in args:
