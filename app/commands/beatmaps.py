@@ -142,19 +142,28 @@ async def fix_beatmapset(context: Context):
         )
 
 def update_beatmapset(session: Session, set_id: int, status: int):
-        session.query(DBBeatmapset) \
-            .filter(DBBeatmapset.id == set_id) \
-            .update({
-                'status': status,
-                'last_update': datetime.now()
-            })
-        rows_changed = session.query(DBBeatmap) \
-            .filter(DBBeatmap.set_id == set_id) \
-            .update({
-                'status': status,
-                'last_update': datetime.now()
-            })
-        return rows_changed
+    session.query(DBBeatmapset) \
+        .filter(DBBeatmapset.id == set_id) \
+        .update({
+            'status': status,
+            'last_update': datetime.now()
+        })
+    rows_changed = session.query(DBBeatmap) \
+        .filter(DBBeatmap.set_id == set_id) \
+        .update({
+            'status': status,
+            'last_update': datetime.now()
+        })
+    return rows_changed
+
+def update_beatmap(session: Session, beatmap_id: int, status: int):
+    rows_changed = session.query(DBBeatmap) \
+        .filter(DBBeatmap.id == beatmap_id) \
+        .update({
+            'status': status,
+            'last_update': datetime.now()
+        })
+    return rows_changed
 
 @app.session.commands.register(['modset'], roles=['BAT', 'Admin'])
 async def change_beatmapset_status(context: Context):
@@ -229,6 +238,89 @@ async def change_beatmapset_status(context: Context):
             else:
                 set_id = int(context.args[0])
                 rows_changed = update_beatmapset(session, set_id, status)
+
+            session.commit()
+
+        await context.message.channel.send(
+            f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
+            reference=context.message,
+            mention_author=True
+        )
+
+
+@app.session.commands.register(['moddiff'], roles=['BAT', 'Admin'])
+async def change_beatmap_status(context: Context):
+    """<beatmap_id> <status> - Modify a beatmap status"""
+
+    if context.message.attachments:
+        if len(context.args) < 1 or not context.message.attachments[0].content_type.startswith('text/plain'):
+            await context.message.channel.send(
+                f'Invalid syntax: `!{context.command} <beatmap_id> <status>`',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+    elif len(context.args) < 2 or not context.args[0].isnumeric():
+        await context.message.channel.send(
+            f'Invalid syntax: `!{context.command} <beatmap_id> <status>`',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+
+    index = 1 if not context.message.attachments else 0
+
+    if context.args[index].lstrip('-+').isdigit():
+        status = int(context.args[index])
+        if status not in DatabaseStatus.values():
+            statuses = {status.name:status.value for status in DatabaseStatus}
+            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
+            await context.message.channel.send(
+                f'Invalid status! Valid status: ```\n{statuses}```',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+
+    else:
+        # Get valid statuses from enum
+        statuses = {
+            status.name.lower():status.value
+            for status in DatabaseStatus
+        }
+        if context.args[index].lower() not in statuses:
+            statuses = {status.name:status.value for status in DatabaseStatus}
+            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
+            await context.message.channel.send(
+                f'Invalid status! Valid status: ```\n{statuses}```',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+        status = statuses[context.args[index].lower()]
+
+    async with context.message.channel.typing():
+        with app.session.database.session as session:
+            if context.message.attachments:
+
+                file = await context.message.attachments[0].read()
+                rows_changed = 0
+
+                for beatmap_id in file.decode().split('\n'):
+                    if not beatmap_id:
+                        break
+                    if not beatmap_id.strip().isnumeric():
+                        await context.message.channel.send(
+                            'Attach a proper beatmap list.',
+                            reference=context.message,
+                            mention_author=True
+                        )
+                        return
+                    beatmap_id = int(beatmap_id.strip())
+                    rows_changed += update_beatmap(session, beatmap_id, status)
+            else:
+                beatmap_id = int(context.args[0])
+                rows_changed = update_beatmap(session, beatmap_id, status)
 
             session.commit()
 
