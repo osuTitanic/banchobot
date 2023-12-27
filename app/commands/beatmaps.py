@@ -165,6 +165,26 @@ def update_beatmap(session: Session, beatmap_id: int, status: int):
         })
     return rows_changed
 
+def parse_status(string):
+    if string.lstrip('-+').isdigit():
+        status = int(string)
+        if status not in DatabaseStatus.values():
+            statuses = {status.name:status.value for status in DatabaseStatus}
+            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
+            return -10, f'Invalid status! Valid status: ```\n{statuses}```'
+    else:
+        # Get valid statuses from enum
+        statuses = {
+            status.name.lower():status.value
+            for status in DatabaseStatus
+        }
+        if string.lower() not in statuses:
+            statuses = {status.name:status.value for status in DatabaseStatus}
+            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
+            return -10, f'Invalid status! Valid status: ```\n{statuses}```'
+        status = statuses[string.lower()]
+    return status, None
+
 @app.session.commands.register(['modset'], roles=['BAT', 'Admin'])
 async def change_beatmapset_status(context: Context):
     """<set_id> <status> - Modify a beatmapset status"""
@@ -187,34 +207,14 @@ async def change_beatmapset_status(context: Context):
 
     index = 1 if not context.message.attachments else 0
 
-    if context.args[index].lstrip('-+').isdigit():
-        status = int(context.args[index])
-        if status not in DatabaseStatus.values():
-            statuses = {status.name:status.value for status in DatabaseStatus}
-            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
-            await context.message.channel.send(
-                f'Invalid status! Valid status: ```\n{statuses}```',
-                reference=context.message,
-                mention_author=True
-            )
-            return
-
-    else:
-        # Get valid statuses from enum
-        statuses = {
-            status.name.lower():status.value
-            for status in DatabaseStatus
-        }
-        if context.args[index].lower() not in statuses:
-            statuses = {status.name:status.value for status in DatabaseStatus}
-            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
-            await context.message.channel.send(
-                f'Invalid status! Valid status: ```\n{statuses}```',
-                reference=context.message,
-                mention_author=True
-            )
-            return
-        status = statuses[context.args[index].lower()]
+    status, err = parse_status(context.args[index])
+    if err:
+        await context.message.channel.send(
+            err,
+            reference=context.message,
+            mention_author=True
+        )
+        return
 
     async with context.message.channel.typing():
         with app.session.database.session as session:
@@ -270,34 +270,14 @@ async def change_beatmap_status(context: Context):
 
     index = 1 if not context.message.attachments else 0
 
-    if context.args[index].lstrip('-+').isdigit():
-        status = int(context.args[index])
-        if status not in DatabaseStatus.values():
-            statuses = {status.name:status.value for status in DatabaseStatus}
-            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
-            await context.message.channel.send(
-                f'Invalid status! Valid status: ```\n{statuses}```',
-                reference=context.message,
-                mention_author=True
-            )
-            return
-
-    else:
-        # Get valid statuses from enum
-        statuses = {
-            status.name.lower():status.value
-            for status in DatabaseStatus
-        }
-        if context.args[index].lower() not in statuses:
-            statuses = {status.name:status.value for status in DatabaseStatus}
-            statuses = "\t\n".join([f"{value}: {name}" for name, value in statuses.items()])
-            await context.message.channel.send(
-                f'Invalid status! Valid status: ```\n{statuses}```',
-                reference=context.message,
-                mention_author=True
-            )
-            return
-        status = statuses[context.args[index].lower()]
+    status, err = parse_status(context.args[index])
+    if err:
+        await context.message.channel.send(
+            err,
+            reference=context.message,
+            mention_author=True
+        )
+        return
 
     async with context.message.channel.typing():
         with app.session.database.session as session:
