@@ -1,5 +1,6 @@
+
+from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmap, DBBeatmapset
-from app.common.database.repositories import beatmapsets
 from app.common.constants import DatabaseStatus
 from sqlalchemy.orm import Session
 from app.objects import Context
@@ -141,30 +142,6 @@ async def fix_beatmapset(context: Context):
             mention_author=True
         )
 
-def update_beatmapset(session: Session, set_id: int, status: int):
-    session.query(DBBeatmapset) \
-        .filter(DBBeatmapset.id == set_id) \
-        .update({
-            'status': status,
-            'last_update': datetime.now()
-        })
-    rows_changed = session.query(DBBeatmap) \
-        .filter(DBBeatmap.set_id == set_id) \
-        .update({
-            'status': status,
-            'last_update': datetime.now()
-        })
-    return rows_changed
-
-def update_beatmap(session: Session, beatmap_id: int, status: int):
-    rows_changed = session.query(DBBeatmap) \
-        .filter(DBBeatmap.id == beatmap_id) \
-        .update({
-            'status': status,
-            'last_update': datetime.now()
-        })
-    return rows_changed
-
 def parse_status(string):
     if string.lstrip('-+').isdigit():
         status = int(string)
@@ -226,6 +203,7 @@ async def change_beatmapset_status(context: Context):
                 for set_id in file.decode().split('\n'):
                     if not set_id:
                         break
+
                     if not set_id.strip().isnumeric():
                         await context.message.channel.send(
                             'Attach a proper beatmap list.',
@@ -233,11 +211,42 @@ async def change_beatmapset_status(context: Context):
                             mention_author=True
                         )
                         return
+
                     set_id = int(set_id.strip())
-                    rows_changed += update_beatmapset(session, set_id, status)
+                    beatmapsets.update(
+                        set_id,
+                        updates={
+                            'status': status,
+                            'last_update': datetime.now()
+                        },
+                        session=session
+                    )
+                    rows_changed += beatmaps.update_by_set_id(
+                        set_id,
+                        updates={
+                            'status': status,
+                            'last_update': datetime.now()
+                        },
+                        session=session
+                    )
             else:
                 set_id = int(context.args[0])
-                rows_changed = update_beatmapset(session, set_id, status)
+                beatmapsets.update(
+                    set_id,
+                    updates={
+                        'status': status,
+                        'last_update': datetime.now()
+                    },
+                    session=session
+                )
+                rows_changed = beatmaps.update_by_set_id(
+                    set_id,
+                    updates={
+                        'status': status,
+                        'last_update': datetime.now()
+                    },
+                    session=session
+                )
 
             session.commit()
 
@@ -289,6 +298,7 @@ async def change_beatmap_status(context: Context):
                 for beatmap_id in file.decode().split('\n'):
                     if not beatmap_id:
                         break
+
                     if not beatmap_id.strip().isnumeric():
                         await context.message.channel.send(
                             'Attach a proper beatmap list.',
@@ -296,11 +306,20 @@ async def change_beatmap_status(context: Context):
                             mention_author=True
                         )
                         return
+
                     beatmap_id = int(beatmap_id.strip())
-                    rows_changed += update_beatmap(session, beatmap_id, status)
+                    rows_changed += beatmaps.update(
+                        beatmap_id,
+                        updates={'status': status, 'last_update': datetime.now()},
+                        session=session
+                    )
             else:
                 beatmap_id = int(context.args[0])
-                rows_changed = update_beatmap(session, beatmap_id, status)
+                rows_changed = beatmaps.update(
+                    beatmap_id,
+                    updates={'status': status, 'last_update': datetime.now()},
+                    session=session
+                )
 
             session.commit()
 
