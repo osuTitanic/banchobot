@@ -49,7 +49,7 @@ class ViewReplayButton(View):
 
             await interaction.message.edit(view=self)
 
-@app.session.commands.register(["recent", "last"])
+@app.session.commands.register(["recent", "last", "r"])
 async def recent(context: Context):
     """(username) - Displays the last play of another person or yourself"""
     if not (user := users.fetch_by_discord_id(context.message.author.id)):
