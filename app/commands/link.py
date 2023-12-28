@@ -51,7 +51,7 @@ async def create_account(context: Context):
 
     if not status.exists(user.id):
         await context.message.channel.send(
-            'Please log into bancho and try again!',
+            'Please log into the game and try again!',
             reference=context.message,
             mention_author=True
         )
