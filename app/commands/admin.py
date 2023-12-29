@@ -1,9 +1,10 @@
 
+from psycopg2 import IntegrityError
 from app.common.database.repositories import *
 from app.objects import Context
 import app
 
-@app.session.commands.register(['restrict', 'ban'], roles=['Admin'])
+@app.session.commands.register(['restrict', 'ban'], roles=['Admin', 'GMT'])
 async def restrict(context: Context):
     """<user_id> <reason> - Restrict user"""
     if not context.args:
@@ -62,7 +63,7 @@ async def restrict(context: Context):
             mention_author=True
         )
             
-@app.session.commands.register(['unrestrict', 'unban'], roles=['Admin'])
+@app.session.commands.register(['unrestrict', 'unban'], roles=['Admin', 'GMT'])
 async def unrestrict(context: Context):
     """<user_id> - Unrestrict user"""
     if not context.args:
@@ -186,6 +187,160 @@ async def rename(context: Context):
 
     await context.message.channel.send(
         'User renamed.',
+        reference=context.message,
+        mention_author=True
+    )
+
+@app.session.commands.register(['addgroup'], roles=['Admin'])
+async def add_group(context: Context):
+    """<user_id> <group_id> - Add group to user"""
+    if len(context.args) < 2:
+        await context.message.channel.send(
+            f'Invalid syntax: `!{context.command} <user_id> <group_id>`',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+
+    group = " ".join(context.args[1:])
+    
+    if context.args[0].isnumeric():
+        # Get internal user id
+        discord_id = None
+        user = users.fetch_by_id(int(context.args[0]))
+
+    elif context.args[0].startswith("<@"):
+        # Get discord id
+        discord_id = int(context.args[0][2:-1])
+        user = users.fetch_by_discord_id(discord_id)
+
+    else:
+        await context.message.channel.send(
+            f'Invalid syntax: `!{context.command} <user_id/mention> <group_id>`',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+
+    if not user:
+        await context.message.channel.send(
+            'User not found!',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+    
+    group_list = groups.fetch_all()
+    
+    db_group = None
+    
+    if group.isnumeric():
+        db_group = groups.fetch_one(int(group))
+    else:
+        for group in group_list:
+            if group.short_name.lower() == group.lower():
+                db_group = group
+                break
+    
+    if not db_group:
+        groups = {group.id:group.short_name for group in group_list}
+        groups = "\t\n".join([f"{value}: {name}" for name, value in groups.items()])
+        await context.message.channel.send(
+            'Group not found! Valid groups: ```\n' + groups + '```',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+    
+    try:
+        groups.create_entry(user.id, db_group.id)
+    except IntegrityError:
+        await context.message.channel.send(
+            'User already in group.',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+    
+    await context.message.channel.send(
+        'User added to group.',
+        reference=context.message,
+        mention_author=True
+    )
+
+@app.session.commands.register(['removegroup'], roles=['Admin'])
+async def remove_group(context: Context):
+    """<user_id> <group_id> - Remove group from user"""
+    if len(context.args) < 2:
+        await context.message.channel.send(
+            f'Invalid syntax: `!{context.command} <user_id> <group_id>`',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+
+    group = " ".join(context.args[1:])
+    
+    if context.args[0].isnumeric():
+        # Get internal user id
+        discord_id = None
+        user = users.fetch_by_id(int(context.args[0]))
+
+    elif context.args[0].startswith("<@"):
+        # Get discord id
+        discord_id = int(context.args[0][2:-1])
+        user = users.fetch_by_discord_id(discord_id)
+
+    else:
+        await context.message.channel.send(
+            f'Invalid syntax: `!{context.command} <user_id/mention> <group_id>`',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+
+    if not user:
+        await context.message.channel.send(
+            'User not found!',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+    
+    group_list = groups.fetch_all()
+    
+    db_group = None
+    
+    if group.isnumeric():
+        db_group = groups.fetch_one(int(group))
+    else:
+        for group in group_list:
+            if group.short_name.lower() == group.lower():
+                db_group = group
+                break
+    
+    if not db_group:
+        groups = {group.id:group.short_name for group in group_list}
+        groups = "\t\n".join([f"{value}: {name}" for name, value in groups.items()])
+        await context.message.channel.send(
+            'Group not found! Valid groups: ```\n' + groups + '```',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+    
+    try:
+        groups.delete_entry(user.id, db_group.id)
+    except IntegrityError:
+        await context.message.channel.send(
+            'User already not in group.',
+            reference=context.message,
+            mention_author=True
+        )
+        return
+    
+    await context.message.channel.send(
+        'User removed from group.',
         reference=context.message,
         mention_author=True
     )
