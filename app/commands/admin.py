@@ -246,7 +246,7 @@ async def add_group(context: Context):
         groups_fmt = {group.id:group.short_name for group in group_list}
         groups_fmt = "\t\n".join([f"{value}: {name}" for name, value in groups_fmt.items()])
         await context.message.channel.send(
-            'Group not found! Valid groups: ```\n' + groups_fmt + '```',
+            f'Group not found! Valid groups: ```\n {groups_fmt} ```',
             reference=context.message,
             mention_author=True
         )
@@ -316,14 +316,14 @@ async def remove_group(context: Context):
     else:
         for db_group in group_list:
             if db_group.short_name.lower() == group.lower():
-                db_group = group
+                found_group = group
                 break
     
     if not found_group:
         groups_fmt = {group.id:group.short_name for group in group_list}
         groups_fmt = "\t\n".join([f"{value}: {name}" for name, value in groups_fmt.items()])
         await context.message.channel.send(
-            'Group not found! Valid groups: ```\n' + groups + '```',
+            f'Group not found! Valid groups: ```\n {groups_fmt} ```',
             reference=context.message,
             mention_author=True
         )
