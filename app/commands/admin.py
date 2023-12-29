@@ -232,17 +232,17 @@ async def add_group(context: Context):
     
     group_list = groups.fetch_all()
     
-    db_group = None
+    found_group = None
     
     if group.isnumeric():
-        db_group = groups.fetch_one(int(group))
+        found_group = groups.fetch_one(int(group))
     else:
-        for group in group_list:
-            if group.short_name.lower() == group.lower():
-                db_group = group
+        for db_group in group_list:
+            if db_group.short_name.lower() == group.lower():
+                found_group = db_group
                 break
     
-    if not db_group:
+    if not found_group:
         groups_fmt = {group.id:group.short_name for group in group_list}
         groups_fmt = "\t\n".join([f"{value}: {name}" for name, value in groups_fmt.items()])
         await context.message.channel.send(
@@ -253,7 +253,7 @@ async def add_group(context: Context):
         return
     
     try:
-        groups.create_entry(user.id, db_group.id)
+        groups.create_entry(user.id, found_group.id)
     except IntegrityError:
         await context.message.channel.send(
             'User already in group.',
@@ -309,17 +309,17 @@ async def remove_group(context: Context):
     
     group_list = groups.fetch_all()
     
-    db_group = None
+    found_group = None
     
     if group.isnumeric():
-        db_group = groups.fetch_one(int(group))
+        found_group = groups.fetch_one(int(group))
     else:
-        for group in group_list:
-            if group.short_name.lower() == group.lower():
+        for db_group in group_list:
+            if db_group.short_name.lower() == group.lower():
                 db_group = group
                 break
     
-    if not db_group:
+    if not found_group:
         groups_fmt = {group.id:group.short_name for group in group_list}
         groups_fmt = "\t\n".join([f"{value}: {name}" for name, value in groups_fmt.items()])
         await context.message.channel.send(
@@ -330,7 +330,7 @@ async def remove_group(context: Context):
         return
     
     try:
-        groups.delete_entry(user.id, db_group.id)
+        groups.delete_entry(user.id, found_group.id)
     except IntegrityError:
         await context.message.channel.send(
             'User already not in group.',
