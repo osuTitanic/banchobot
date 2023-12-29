@@ -316,7 +316,7 @@ async def remove_group(context: Context):
     else:
         for db_group in group_list:
             if db_group.short_name.lower() == group.lower():
-                found_group = group
+                found_group = db_group
                 break
     
     if not found_group:
