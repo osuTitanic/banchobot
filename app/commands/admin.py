@@ -133,7 +133,7 @@ async def unrestrict(context: Context):
         mention_author=True
     )
 
-@app.session.commands.register(['rename'], roles=['Admin'])
+@app.session.commands.register(['rename'], roles=['Admin', 'GMT'])
 async def rename(context: Context):
     """<user_id> <new_name> - Rename user"""
     if len(context.args) < 2:
