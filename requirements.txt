@@ -14,7 +14,7 @@ geoip2==4.8.0
 greenlet==3.0.3
 idna==3.6
 jmespath==1.0.1
-maxminddb==2.5.1
+maxminddb==2.5.2
 multidict==6.0.4
 oauthlib==3.2.2
 osrparse==6.0.2
