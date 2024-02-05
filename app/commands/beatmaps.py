@@ -145,6 +145,13 @@ async def fix_beatmapset(context: Context):
 
 @app.session.commands.register(['beatmap_info'])
 async def beatmap_info(context: Context):
+    if not context.args:
+        await context.message.channel.send(
+            f'Invalid syntax: `!{context.command} <link>`',
+            reference=context.message,
+            mention_author=True
+        )
+        return
     link = context.args[0]
     is_set = "/beatmapsets/" in link or "/s/" in link
     id = 0
