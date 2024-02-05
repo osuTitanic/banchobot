@@ -1,5 +1,6 @@
 
 from app.common.database.repositories import users
+from app.commands.beatmaps import beatmap_info
 from app.objects import Context
 from discord.utils import get
 
@@ -8,6 +9,8 @@ import config
 import shlex
 import app
 
+BEATMAP_URLS = ("https://osu.ppy.sh/b/", "https://osu.ppy.sh/beatmapsets/", "https://osu.ppy.sh/s/", f"https://{config.DOMAIN_NAME}/b/", f"https://{config.DOMAIN_NAME}/beatmapsets/", f"https://{config.DOMAIN_NAME}/s/")
+
 class BanchoBot(discord.Client):
     async def on_ready(self):
         app.session.logger.info(
@@ -15,10 +18,17 @@ class BanchoBot(discord.Client):
         )
 
     async def on_message(self, message: discord.Message):
-        if not message.content.startswith(config.BOT_PREFIX):
-            return
-
         if message.author.bot:
+            return
+        
+        if not message.content.startswith(config.BOT_PREFIX):
+            if "map" in message.channel.name:
+                for url in BEATMAP_URLS:
+                    if url in message.content.lower():
+                        await beatmap_info(
+                            Context("beatmap_info", message.content.split(" "), message)
+                        )
+                        break
             return
 
         # Parse command
