@@ -22,7 +22,7 @@ class BanchoBot(discord.Client):
             return
         
         if not message.content.startswith(config.BOT_PREFIX):
-            if "map" in message.channel.name:
+            if "map-requests" in message.channel.name:
                 for url in BEATMAP_URLS:
                     if url in message.content.lower():
                         await beatmap_info(
