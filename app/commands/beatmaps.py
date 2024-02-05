@@ -152,14 +152,17 @@ async def beatmap_info(context: Context):
             mention_author=True
         )
         return
+        
     link = context.args[0]
     is_set = "/beatmapsets/" in link or "/s/" in link
     id = 0
+    
     for char in link:
         if char.isdigit():
             id = id * 10 + int(char) # funny
         elif id != 0:
             break
+            
     if not id:
         await context.message.channel.send(
             f'Invalid syntax: `!{context.command} <link>`',
@@ -167,7 +170,9 @@ async def beatmap_info(context: Context):
             mention_author=True
         )
         return
+        
     api = OssapiV1(config.OSU_API_KEY)
+    
     if is_set:
         maps = api.get_beatmaps(beatmapset_id=id)
     else:
@@ -179,6 +184,7 @@ async def beatmap_info(context: Context):
                 mention_author=True
             )
             return
+            
         maps = api.get_beatmaps(beatmapset_id=map[0].beatmapset_id)
 
     if not maps:
@@ -205,35 +211,46 @@ async def beatmap_info(context: Context):
     beatmapset_info += f"BPM: {maps[0].bpm} Length: {timedelta(seconds=maps[0].total_length)}\n Status: {b_status_name} on Bancho | {t_status_name} on Titanic\n"
     
     beatmap_embed.add_field(name="Info", value=beatmapset_info, inline=False)
+    
     for beatmap in sorted(maps, key=lambda x: x.star_rating, reverse=True):
         suffix = ""
+        
         if beatmap.mode != 0:
             suffix = f" ({['osu', 'taiko', 'catch', 'mania'][beatmap.mode]})"
+            
         beatmap_info = f"Circles: {beatmap.count_hitcircles} | Sliders: {beatmap.count_sliders} | Spinners: {beatmap.count_spinners} | Max Combo: {beatmap.max_combo}x\n"
         beatmap_info += f"Original stats:  AR: {beatmap.approach_rate} | OD: {beatmap.overrall_difficulty} | HP: {beatmap.health} | CS: {beatmap.circle_size}\n"
         beatmap_info += f"Adapted stats: AR: {round(beatmap.approach_rate)}  | OD: {round(beatmap.overrall_difficulty)}  | HP: {round(beatmap.health)}  | CS: {round(beatmap.circle_size)}\n"
+        
         try:
             mods_vn = {'NM': 0, 'HR': Mods.HardRock, 'HDDT': Mods.Hidden+Mods.DoubleTime}
             mods_rx = {'RX': Mods.Relax, 'HDDTRX': Mods.Hidden+Mods.DoubleTime+Mods.Relax, 'HDDTHRRX': Mods.HardRock+Mods.Hidden+Mods.DoubleTime+Mods.Relax}
             pp_info = ""
+            
             if (beatmap_file := app.session.storage.get_beatmap(beatmap.beatmap_id)):
                 bm = Beatmap(bytes=beatmap_file)
                 pp_info += "PP: "
+                
                 for combo_name, mod_value in mods_vn.items():
                     calc = Calculator(mods=mod_value)
                     result = calc.performance(bm)
                     pp_info += f"{combo_name}: {result.pp:.0f} | "
+                    
                 pp_info = pp_info[:-2]
+                
                 if beatmap.mode != 3:
                     pp_info += "\nPP: "
+                    
                     for combo_name, mod_value in mods_rx.items():
                         calc = Calculator(mods=mod_value)
                         result = calc.performance(bm)
                         pp_info += f"{combo_name}: {result.pp:.0f} | "
+                        
                     pp_info = pp_info[:-2]
                 beatmap_info += f"{pp_info}\n"
         except:
             app.session.logger.warning(f"Failed to calculate performance!", exc_info=True)
+            
         beatmap_embed.add_field(name=f"{beatmap.star_rating:.1f}* {beatmap.version}{suffix}", value=beatmap_info, inline=False)
     beatmap_embed.set_image(url=f"https://assets.ppy.sh/beatmaps/{maps[0].beatmapset_id}/covers/cover@2x.jpg")
     await context.message.channel.send(embed=beatmap_embed)
