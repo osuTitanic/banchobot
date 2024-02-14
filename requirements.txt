@@ -9,6 +9,6 @@ python-dotenv==1.0.1
 redis==5.0.1
 requests==2.31.0
 sendgrid==6.11.0
-sqlalchemy==2.0.26
+sqlalchemy==2.0.27
 timeago==1.0.16
 titanic-pp-py==0.0.6
