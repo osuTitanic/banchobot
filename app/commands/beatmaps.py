@@ -145,6 +145,7 @@ async def fix_beatmapset(context: Context):
 
 @app.session.commands.register(['beatmap_info'])
 async def beatmap_info(context: Context):
+    """<link> - Get information about a beatmap"""
     if not context.args:
         await context.message.channel.send(
             f'Invalid syntax: `!{context.command} <link>`',
