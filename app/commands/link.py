@@ -24,7 +24,7 @@ async def create_account(context: Context):
 
     if not context.args:
         await context.message.channel.send(
-            'Please type in a username!',
+            'Invalid syntax: `!link <username>`',
             reference=context.message,
             mention_author=True
         )
