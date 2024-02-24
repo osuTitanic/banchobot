@@ -74,64 +74,65 @@ async def unrestrict(context: Context):
         )
         return
     
-    if context.args[0].isnumeric():
-        # Get internal user id
-        discord_id = None
-        user = users.fetch_by_id(int(context.args[0]))
+    with app.session.database.managed_session() as session:
+        if context.args[0].isnumeric():
+            # Get internal user id
+            discord_id = None
+            user = users.fetch_by_id(int(context.args[0]), session=session)
 
-    elif context.args[0].startswith("<@"):
-        # Get discord id
-        discord_id = int(context.args[0][2:-1])
-        user = users.fetch_by_discord_id(discord_id)
+        elif context.args[0].startswith("<@"):
+            # Get discord id
+            discord_id = int(context.args[0][2:-1])
+            user = users.fetch_by_discord_id(discord_id, session=session)
 
-    else:
+        else:
+            await context.message.channel.send(
+                f'Invalid syntax: `!{context.command} <user_id/mention> <reason>`',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+
+        if not user:
+            await context.message.channel.send(
+                f'User not found!',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+
+        if not user.restricted:
+            await context.message.channel.send(
+                f'User is already unrestricted!',
+                reference=context.message,
+                mention_author=True
+            )
+            return
+
+        # Restore scores
+        try:
+            scores.restore_hidden_scores(user.id, session=session)
+            stats.restore(user.id, session=session)
+        except Exception as e:
+            app.session.logger.error(
+                f'Failed to restore scores of player "{user.name}": {e}',
+                exc_info=e
+            )
+            await context.message.reply("Failed to restore scores!")
+
+        # Unrestrict HWID
+        clients.update_all(user.id, {'banned': False}, session=session)
+        users.update(user.id, {'restricted': False}, session=session)
+
+        # Add user to players & supporters group
+        groups.create_entry(user.id, 999, session=session)
+        groups.create_entry(user.id, 1000, session=session)
+
         await context.message.channel.send(
-            f'Invalid syntax: `!{context.command} <user_id/mention> <reason>`',
+            f'User unrestricted.',
             reference=context.message,
             mention_author=True
         )
-        return
-
-    if not user:
-        await context.message.channel.send(
-            f'User not found!',
-            reference=context.message,
-            mention_author=True
-        )
-        return
-
-    if not user.restricted:
-        await context.message.channel.send(
-            f'User is already unrestricted!',
-            reference=context.message,
-            mention_author=True
-        )
-        return
-    
-    # Restore scores
-    try:
-        scores.restore_hidden_scores(user.id)
-        stats.restore(user.id)
-    except Exception as e:
-        app.session.logger.error(
-            f'Failed to restore scores of player "{user.name}": {e}',
-            exc_info=e
-        )
-        await context.message.reply("Failed to restore scores!")
-
-    # Unrestrict HWID
-    clients.update_all(user.id, {'banned': False})
-    users.update(user.id, {'restricted': False, 'permissions': 5})
-
-    # Add user to players & supporters group
-    groups.create_entry(user.id, 999)
-    groups.create_entry(user.id, 1000)
-    
-    await context.message.channel.send(
-        f'User unrestricted.',
-        reference=context.message,
-        mention_author=True
-    )
 
 @app.session.commands.register(['rename'], roles=['Admin', 'GMT'])
 async def rename(context: Context):
