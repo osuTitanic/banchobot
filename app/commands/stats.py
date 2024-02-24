@@ -20,19 +20,15 @@ async def stats(context: Context):
 
     mode = user.preferred_mode
     modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
-
     if context.args:
-        if context.args[0] in modes:
-            mode = modes[context.args[0]]
-        else:
-            await context.message.reply(
-                f"Wrong mode! Available modes: {', '.join(modes.keys())}"
-            )
-            return
-        if len(context.args) > 1:
-            if not (user := users.fetch_by_name_extended(context.args[1])):
-                await context.message.channel.send("User not found!")
-                return
+        for args in context.args:
+            if args in modes:
+                mode = modes[args]
+            else:
+                user = users.fetch_by_name_extended(args)
+                if not user:
+                    await context.message.channel.send("User not found!")
+                    return
 
     if not user.stats:
         await context.message.channel.send("Please log in to bancho first, to see your stats!")
