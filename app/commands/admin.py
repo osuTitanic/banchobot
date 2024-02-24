@@ -109,17 +109,6 @@ async def unrestrict(context: Context):
             )
             return
 
-        # Restore scores
-        try:
-            scores.restore_hidden_scores(user.id, session=session)
-            stats.restore(user.id, session=session)
-        except Exception as e:
-            app.session.logger.error(
-                f'Failed to restore scores of player "{user.name}": {e}',
-                exc_info=e
-            )
-            await context.message.reply("Failed to restore scores!")
-
         # Unrestrict HWID
         clients.update_all(user.id, {'banned': False}, session=session)
         users.update(user.id, {'restricted': False}, session=session)
@@ -127,6 +116,17 @@ async def unrestrict(context: Context):
         # Add user to players & supporters group
         groups.create_entry(user.id, 999, session=session)
         groups.create_entry(user.id, 1000, session=session)
+
+        # Restore scores
+        try:
+            scores.restore_hidden_scores(user.id, session=session)
+            stats.restore(user.id, session=session)
+        except Exception as e:
+            app.session.logger.error(
+                f'Failed to restore scores of player "{context.args[0]}": {e}',
+                exc_info=e
+            )
+            await context.message.reply("Failed to restore scores!")
 
         await context.message.channel.send(
             f'User unrestricted.',
