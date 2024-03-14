@@ -78,46 +78,6 @@ class BanchoBot(discord.Client):
                 reference=message
             )
 
-    async def on_member_join(self, member: discord.Member):
-        app.session.logger.info(
-            f'New member joined the server: {member}'
-        )
-
-        if not (setup := get(member.guild.channels, name='setup')):
-            app.session.logger.warning(
-                'Failed to get #setup channel! Aborting join event.'
-            )
-            return
-
-        dm = await member.create_dm()
-
-        # Check if user already has an account
-        if user := users.fetch_by_discord_id(member.id):
-            app.session.logger.info(
-                f'Member "{member}" already has a linked account: {user.name}'
-            )
-
-            # Assign member role
-            await member.add_roles(
-                get(member.guild.roles, name='Member')
-            )
-
-            await dm.send(
-                content="🎉 Welcome Aboard to osuTitanic! 🚢\n\n"
-                        "Ahoy! We are glad to have you on board here.\n"
-                        "It seems that you already have an account linked to your discord profile, so we've added the Member role to your profile.\n"
-                       f"To get started you can view the <#{setup.id}> channel.\n\n"
-                        "Feel free to ask us any questions and enjoy your stay!"
-            )
-            return
-
-        await dm.send(
-            content="🎉  Welcome Aboard to osuTitanic!\n\n"
-                    "Ahoy! We are glad to have you on board here.\n"
-                   f"It seems that you are new here. To get started you can view the <#{setup.id}> channel.\n\n"
-                    "Feel free to ask us any questions and enjoy your stay!"
-        )
-
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
