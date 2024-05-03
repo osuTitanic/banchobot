@@ -1,6 +1,7 @@
 
 from psycopg2 import IntegrityError
 from app.common.database.repositories import *
+from app.common.cache import leaderboards
 from app.objects import Context
 import app
 
@@ -127,6 +128,12 @@ async def unrestrict(context: Context):
                 exc_info=e
             )
             await context.message.reply("Failed to restore scores!")
+
+        for user_stats in stats.fetch_all(user.id, session=session):
+            leaderboards.update(
+                user_stats,
+                user.country
+            )
 
         await context.message.channel.send(
             f'User unrestricted.',
