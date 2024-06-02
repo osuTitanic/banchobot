@@ -109,13 +109,10 @@ def add_beatmapset(set_id, maps):
     else:
         filesize = 0
 
-    if maps[0].video:
-        if (response := app.session.storage.api.osz(set_id, no_video=True)):
-            filesize_novideo = int(response.headers.get('Content-Length', default=0))
-        else:
-            filesize_novideo = 0
-    else:
+    if not maps[0].video:
         filesize_novideo = 0
+    elif (response := app.session.storage.api.osz(set_id, no_video=True)):
+        filesize_novideo = int(response.headers.get('Content-Length', default=0))
 
     with app.session.database.managed_session() as session:
         db_set = beatmapsets.create(
