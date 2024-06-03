@@ -1,8 +1,9 @@
 
+from app.common.webhooks import Embed as WebhookEmbed, Image, Author
+
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmap, DBBeatmapset
 from app.common.constants import DatabaseStatus, Mods
-from app.common.webhooks import Embed as WebhookEmbed, Image, Author
 
 from titanic_pp_py import Calculator, Beatmap
 from datetime import datetime, timedelta
