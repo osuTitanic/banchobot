@@ -2,6 +2,8 @@
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmap, DBBeatmapset
 from app.common.constants import DatabaseStatus, Mods
+from app.common.webhooks import Embed as WebhookEmbed, Image, Author
+
 from titanic_pp_py import Calculator, Beatmap
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -9,6 +11,7 @@ from app.objects import Context
 from ossapi import OssapiV1
 from discord import Embed
 
+import app.common
 import config
 import utils
 import app
@@ -99,7 +102,9 @@ async def add_beatmapset(context: Context):
                     mention_author=True
                 )
                 return
-
+            
+            post_beatmapset_change(set_id)
+            
             await context.message.channel.send(
                 f'[Beatmapset was created. ({len(updates)} edited)](http://osu.{config.DOMAIN_NAME}/s/{db_set.id})',
                 reference=context.message,
@@ -343,6 +348,7 @@ async def change_beatmapset_status(context: Context):
                         },
                         session=session
                     )
+                session.commit()
             else:
                 set_id = int(context.args[0])
                 beatmapsets.update(
@@ -361,8 +367,8 @@ async def change_beatmapset_status(context: Context):
                     },
                     session=session
                 )
-
-            session.commit()
+                post_beatmapset_change(set_id)
+                session.commit()
 
         await context.message.channel.send(
             f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
@@ -427,6 +433,9 @@ async def change_beatmap_status(context: Context):
                         updates={'status': status, 'last_update': datetime.now()},
                         session=session
                     )
+
+                session.commit()
+
             else:
                 beatmap_id = int(context.args[0])
                 rows_changed = beatmaps.update(
@@ -434,11 +443,42 @@ async def change_beatmap_status(context: Context):
                     updates={'status': status, 'last_update': datetime.now()},
                     session=session
                 )
-
-            session.commit()
+                post_beatmap_change(beatmap_id)
+                session.commit()
 
         await context.message.channel.send(
             f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
             reference=context.message,
             mention_author=True
         )
+
+def post_beatmapset_change(beatmapset_id: int):
+    beatmapset = beatmapsets.fetch_one(beatmapset_id)
+    if not beatmapset:
+        return
+    status_name = [status.name for status in DatabaseStatus if status.value == beatmapset.status][0]
+    embed = WebhookEmbed(title=f'Status change: {beatmapset.title}')
+    embed.image = Image(url=f'https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover.jpg')
+    embed.author = Author(name="New beatmapset update!")
+    embed.add_field(name="Artist", value=beatmapset.artist, inline=True)
+    embed.add_field(name="Creator", value=beatmapset.creator, inline=True)
+    embed.add_field(name="New status", value=status_name, inline=True)
+    embed.add_field(name="Bancho url", value=f"https://osu.ppy.sh/s/{beatmapset.id}", inline=True)
+    embed.add_field(name="Titanic url", value=f"https://{config.DOMAIN_NAME}/s/{beatmapset.id}", inline=True)
+    app.common.officer.event(embeds=[embed])
+
+def post_beatmap_change(beatmap_id: int):
+    beatmap = beatmaps.fetch_by_id(beatmap_id)
+    if not beatmap:
+        return
+    beatmapset = beatmap.beatmapset
+    status_name = [status.name for status in DatabaseStatus if status.value == beatmap.status][0]
+    embed = WebhookEmbed(title=f'Status change: {beatmapset.title} ({beatmap.version})')
+    embed.image = Image(url=f'https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover.jpg')
+    embed.author = Author(name="New beatmap update!")
+    embed.add_field(name="Artist", value=beatmapset.artist, inline=True)
+    embed.add_field(name="Creator", value=beatmapset.creator, inline=True)
+    embed.add_field(name="New status", value=status_name, inline=True)
+    embed.add_field(name="Bancho url", value=f"https://osu.ppy.sh/b/{beatmap.id}", inline=True)
+    embed.add_field(name="Titanic url", value=f"https://{config.DOMAIN_NAME}/b/{beatmap.id}", inline=True)
+    app.common.officer.event(embeds=[embed])
