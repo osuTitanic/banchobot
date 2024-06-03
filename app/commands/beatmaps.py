@@ -465,7 +465,7 @@ def post_beatmapset_change(beatmapset_id: int):
     embed.add_field(name="Creator", value=beatmapset.creator, inline=True)
     embed.add_field(name="New status", value=status_name, inline=True)
     embed.add_field(name="Bancho url", value=f"https://osu.ppy.sh/s/{beatmapset.id}", inline=True)
-    embed.add_field(name="Titanic url", value=f"https://{config.DOMAIN_NAME}/s/{beatmapset.id}", inline=True)
+    embed.add_field(name="Titanic url", value=f"https://osu.{config.DOMAIN_NAME}/s/{beatmapset.id}", inline=True)
     app.common.officer.event(embeds=[embed])
 
 def post_beatmap_change(beatmap_id: int):
@@ -481,5 +481,5 @@ def post_beatmap_change(beatmap_id: int):
     embed.add_field(name="Creator", value=beatmapset.creator, inline=True)
     embed.add_field(name="New status", value=status_name, inline=True)
     embed.add_field(name="Bancho url", value=f"https://osu.ppy.sh/b/{beatmap.id}", inline=True)
-    embed.add_field(name="Titanic url", value=f"https://{config.DOMAIN_NAME}/b/{beatmap.id}", inline=True)
+    embed.add_field(name="Titanic url", value=f"https://osu.{config.DOMAIN_NAME}/b/{beatmap.id}", inline=True)
     app.common.officer.event(embeds=[embed])
