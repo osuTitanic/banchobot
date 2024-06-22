@@ -499,7 +499,7 @@ async def fix_beatmap_hashes(ctx: Context):
 
     beatmapset_id = int(ctx.args[0])
 
-    async with ctx.typing():
+    async with ctx.message.channel.typing():
         with app.session.database.session as session:
             beatmapset = beatmapsets.fetch_one(beatmapset_id)
 
