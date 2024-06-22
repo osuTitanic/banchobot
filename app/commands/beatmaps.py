@@ -488,13 +488,13 @@ def post_beatmap_change(beatmap_id: int):
 
 @app.session.commands.register(['fixhash'], roles=['BAT', 'Admin'])
 async def fix_beatmap_hashes(ctx: Context):
-    """<beatmap_id> - Update the hashes of a beatmapset"""
+    """<beatmapset_id> - Update the hashes of a beatmapset"""
     if not ctx.args:
-        await ctx.send('Invalid syntax: `!fixhash <beatmapset_id>`')
+        await ctx.message.channel.send('Invalid syntax: `!fixhash <beatmapset_id>`')
         return
 
     if not ctx.args[0].isnumeric():
-        await ctx.send('Invalid syntax: `!fixhash <beatmapset_id>`')
+        await ctx.message.channel.send('Invalid syntax: `!fixhash <beatmapset_id>`')
         return
 
     beatmapset_id = int(ctx.args[0])
@@ -507,7 +507,7 @@ async def fix_beatmap_hashes(ctx: Context):
             )
 
             if not beatmapset:
-                await ctx.send('Beatmapset was not found.')
+                await ctx.message.channel.send('Beatmapset was not found.')
                 return
 
             for beatmap in beatmapset.beatmaps:
@@ -532,3 +532,39 @@ async def fix_beatmap_hashes(ctx: Context):
             await ctx.message.channel.send(
                 f'Updated hashes for {len(beatmapset.beatmaps)} beatmaps.'
             )
+
+@app.session.commands.register(['uploadbeatmap', 'uploadmap'], roles=['BAT', 'Admin'])
+async def upload_beatmap_file(ctx: Context):
+    """<beatmap_id> - Update the hashes of a beatmapset"""
+    if not ctx.args:
+        await ctx.message.channel.send('Invalid syntax: `!uploadbeatmap <beatmap_id>`')
+        return
+
+    if not ctx.args[0].isnumeric():
+        await ctx.message.channel.send('Invalid syntax: `!uploadbeatmap <beatmap_id>`')
+        return
+
+    if not ctx.message.attachments:
+        await ctx.message.channel.send('Attach a beatmap file.')
+        return
+
+    beatmap_id = int(ctx.args[0])
+
+    async with ctx.message.channel.typing():
+        with app.session.database.managed_session() as session:
+            beatmap = beatmaps.fetch_by_id(beatmap_id, session=session)
+
+            if not beatmap:
+                await ctx.message.channel.send('Beatmap was not found.')
+                return
+
+            file = await ctx.message.attachments[0].read()
+
+            app.session.storage.upload_beatmap_file(
+                beatmap.id,
+                file
+            )
+
+        await ctx.message.channel.send(
+            f'Uploaded beatmap file for "{beatmap.version}".'
+        )
