@@ -565,6 +565,12 @@ async def upload_beatmap_file(ctx: Context):
                 file
             )
 
+            beatmaps.update(
+                beatmap.id,
+                updates={'md5': hashlib.md5(file).hexdigest()},
+                session=session
+            )
+
         await ctx.message.channel.send(
             f'Uploaded beatmap file for "{beatmap.version}".'
         )
