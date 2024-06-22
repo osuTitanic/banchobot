@@ -501,7 +501,10 @@ async def fix_beatmap_hashes(ctx: Context):
 
     async with ctx.message.channel.typing():
         with app.session.database.session as session:
-            beatmapset = beatmapsets.fetch_one(beatmapset_id)
+            beatmapset = beatmapsets.fetch_one(
+                beatmapset_id,
+                session=session
+            )
 
             if not beatmapset:
                 await ctx.send('Beatmapset was not found.')
