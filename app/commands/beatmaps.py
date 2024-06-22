@@ -529,6 +529,6 @@ async def fix_beatmap_hashes(ctx: Context):
                     session=session
                 )
 
-            await ctx.send(
+            await ctx.message.channel.send(
                 f'Updated hashes for {len(beatmapset.beatmaps)} beatmaps.'
             )
