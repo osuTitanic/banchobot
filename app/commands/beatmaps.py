@@ -13,6 +13,7 @@ from ossapi import OssapiV1
 from discord import Embed
 
 import app.common
+import hashlib
 import config
 import utils
 import app
@@ -390,6 +391,7 @@ async def change_beatmap_status(context: Context):
                 mention_author=True
             )
             return
+
     elif len(context.args) < 2 or not context.args[0].isnumeric():
         await context.message.channel.send(
             f'Invalid syntax: `!{context.command} <beatmap_id> <status>`',
@@ -483,3 +485,47 @@ def post_beatmap_change(beatmap_id: int):
     embed.add_field(name="Bancho url", value=f"https://osu.ppy.sh/b/{beatmap.id}", inline=True)
     embed.add_field(name="Titanic url", value=f"https://osu.{config.DOMAIN_NAME}/b/{beatmap.id}", inline=True)
     app.common.officer.event(embeds=[embed])
+
+@app.session.commands.register(['fixhash'], roles=['BAT', 'Admin'])
+async def fix_beatmap_hashes(ctx: Context):
+    """<beatmap_id> - Update the hashes of a beatmapset"""
+    if not ctx.args:
+        await ctx.send('Invalid syntax: `!fixhash <beatmapset_id>`')
+        return
+
+    if not ctx.args[0].isnumeric():
+        await ctx.send('Invalid syntax: `!fixhash <beatmapset_id>`')
+        return
+
+    beatmapset_id = int(ctx.args[0])
+
+    async with ctx.typing():
+        with app.session.database.session as session:
+            beatmapset = beatmapsets.fetch_one(beatmapset_id)
+
+            if not beatmapset:
+                await ctx.send('Beatmapset was not found.')
+                return
+
+            for beatmap in beatmapset.beatmaps:
+                custom_beatmap = app.session.storage.get_beatmap_internal(beatmap.id)
+
+                if custom_beatmap:
+                    # We have a custom file for this beatmap
+                    beatmap_hash = hashlib.md5(custom_beatmap).hexdigest()
+
+                else:
+                    response = app.session.requests.get(f'https://api.osu.direct/b/{beatmap.id}')
+                    response.raise_for_status()
+
+                    beatmap_hash = response.json()['FileMD5']
+
+                beatmaps.update(
+                    beatmap.id,
+                    updates={'md5': beatmap_hash},
+                    session=session
+                )
+
+            await ctx.send(
+                f'Updated hashes for {len(beatmapset.beatmaps)} beatmaps.'
+            )
