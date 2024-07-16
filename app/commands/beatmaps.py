@@ -337,7 +337,8 @@ async def change_beatmapset_status(context: Context):
                         set_id,
                         updates={
                             'status': status,
-                            'last_update': datetime.now()
+                            'last_update': datetime.now(),
+                            'approved_at': datetime.now() if status > DatabaseStatus.Pending else None
                         },
                         session=session
                     )
@@ -356,7 +357,8 @@ async def change_beatmapset_status(context: Context):
                     set_id,
                     updates={
                         'status': status,
-                        'last_update': datetime.now()
+                        'last_update': datetime.now(),
+                        'approved_at': datetime.now() if status > DatabaseStatus.Pending else None
                     },
                     session=session
                 )
