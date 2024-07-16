@@ -128,15 +128,14 @@ async def fix_beatmapset(context: Context):
     set_id = int(context.args[0])
 
     async with context.message.channel.typing():
-        with app.session.database.session as session:
-            if not (beatmapset := session.get(DBBeatmapset, set_id)):
+        with app.session.database.managed_session() as session:
+            if not (beatmapset := beatmapsets.fetch_one(set_id, session=session)):
                 await context.message.channel.send(
                     'This beatmapset does not exist!',
                     reference=context.message,
                     mention_author=True
                 )
                 return
-            session.expunge(beatmapset)
 
             updates = utils.fix_beatmapset(beatmapset)
             embed = Embed(title="Beatmap updates", description="Changes:\n")
