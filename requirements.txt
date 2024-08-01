@@ -6,7 +6,7 @@ geoip2==4.8.0
 ossapi==4.0.0
 psycopg2-binary==2.9.9
 python-dotenv==1.0.1
-redis==5.0.7
+redis==5.0.8
 requests==2.32.3
 sendgrid==6.11.0
 sqlalchemy==2.0.31
