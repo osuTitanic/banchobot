@@ -39,8 +39,6 @@ def parse_beatmap_file(content: str) -> Dict[str, dict]:
     current_section = None
 
     for line in content.splitlines():
-        line = line.strip()
-
         if (line.startswith('[') and line.endswith(']')):
             # New section
             current_section = line.removeprefix('[').removesuffix(']')
