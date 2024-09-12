@@ -86,7 +86,8 @@ async def add_beatmapset(context: Context):
                 f'Added {added_count} sets. ({updates_count} edited, {len(error)} errored out.)',
                 reference=context.message,
                 mention_author=True
-                )
+            )
+
             if error:
                 await context.message.channel.send(
                 f'These beatmap could not be added:\n```{" ".join(error)}```',
