@@ -3,7 +3,6 @@ from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmap, DBBeatmapset
 from typing import Dict, Union, List
 
-import requests
 import hashlib
 import config
 import app
@@ -21,7 +20,7 @@ def setup():
         os.makedirs(f'{config.DATA_PATH}/avatars', exist_ok=True)
 
 def get_beatmap_filename(id: int) -> str:
-    response = requests.head(f'https://old.ppy.sh/osu/{id}')
+    response = app.session.requests.head(f'https://old.ppy.sh/osu/{id}')
 
     if not response.ok:
         return ''
@@ -59,7 +58,7 @@ def parse_beatmap_file(content: str) -> Dict[str, dict]:
 
             # Parse key, value pair
             key, value = (
-                split.strip() for split in line.split(':', maxsplit=1)
+                split for split in line.split(':', maxsplit=1)
             )
 
             # Parse float/int
