@@ -152,8 +152,12 @@ def fix_beatmapset(beatmapset: DBBeatmapset) -> List[DBBeatmap]:
     updated_beatmaps = list()
 
     for beatmap in beatmapset.beatmaps:
-        beatmap_file = app.session.storage.get_beatmap(beatmap.id).decode()
-        version, beatmap_dict = parse_beatmap_file(beatmap_file)
+        beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+        if not beatmap_file:
+            continue
+
+        version, beatmap_dict = parse_beatmap_file(beatmap_file.decode())
         beatmap_updates = {}
 
         difficulty_attributes = {
