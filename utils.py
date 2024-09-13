@@ -96,7 +96,11 @@ def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int = 9) -> 
         if isinstance(items, dict):
             # Write key, value pairs
             for key, value in items.items():
-                stream.write(f'{key}: {value}\r\n'.encode())
+                stream.write(
+                    f'{key}: {value}\r\n'.encode()
+                    if section not in ('Metadata', 'Difficulty')
+                    else f'{key}:{value}\r\n'.encode()
+                )
 
         else:
             # Write lines
@@ -105,7 +109,7 @@ def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int = 9) -> 
 
         stream.write(b'\r\n')
 
-    return stream.getvalue()
+    return stream.getvalue().removesuffix(b'\r\n')
 
 def add_beatmapset(set_id: int, maps: List[Beatmap]) -> DBBeatmapset:
     filesize = 0
