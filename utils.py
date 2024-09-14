@@ -1,7 +1,9 @@
 
+from app.common.database.repositories.wrapper import session_wrapper
 from app.common.database import DBBeatmap, DBBeatmapset
 from app.common.database import beatmapsets, beatmaps
 from typing import Dict, Union, List, Tuple
+from sqlalchemy.orm import Session
 from ossapi import Beatmap
 
 import hashlib
@@ -81,7 +83,7 @@ def parse_beatmap_file(content: str) -> Tuple[int, Dict[str, dict]]:
 
     return beatmap_version, sections
 
-def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int = 9) -> bytes:
+def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int) -> bytes:
     """Create a beatmap file from a beatmap dictionary"""
     stream = io.BytesIO()
 
@@ -111,7 +113,12 @@ def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int = 9) -> 
 
     return stream.getvalue().removesuffix(b'\r\n')
 
-def add_beatmapset(set_id: int, maps: List[Beatmap]) -> DBBeatmapset:
+@session_wrapper
+def add_beatmapset(
+    set_id: int,
+    maps: List[Beatmap],
+    session: Session = ...
+) -> DBBeatmapset:
     filesize = 0
     filesize_novideo = 0
 
@@ -121,38 +128,38 @@ def add_beatmapset(set_id: int, maps: List[Beatmap]) -> DBBeatmapset:
     if maps[0].video and (response := app.session.storage.api.osz(set_id, no_video=True)):
         filesize_novideo = int(response.headers.get('Content-Length', default=0))
 
-    with app.session.database.managed_session() as session:
-        db_set = beatmapsets.create(
-            maps[0].beatmapset_id,
-            maps[0].title, maps[0].artist,
-            maps[0].creator, maps[0].source,
-            maps[0].tags, maps[0].approved,
-            maps[0].video, maps[0].storyboard,
-            maps[0].language_id, maps[0].genre_id,
-            filesize, filesize_novideo,
-            submit_date=maps[0].submit_date,
-            approved_date=maps[0].approved_date,
-            last_update=maps[0].last_update,
+    db_set = beatmapsets.create(
+        maps[0].beatmapset_id,
+        maps[0].title, maps[0].artist,
+        maps[0].creator, maps[0].source,
+        maps[0].tags, maps[0].approved,
+        maps[0].video, maps[0].storyboard,
+        maps[0].language_id, maps[0].genre_id,
+        filesize, filesize_novideo,
+        submit_date=maps[0].submit_date,
+        approved_date=maps[0].approved_date,
+        last_update=maps[0].last_update,
+        session=session
+    )
+
+    for beatmap in maps:
+        beatmaps.create(
+            beatmap.beatmap_id, beatmap.beatmapset_id,
+            beatmap.mode, beatmap.beatmap_hash,
+            beatmap.approved, beatmap.version,
+            get_beatmap_filename(beatmap.beatmap_id),
+            beatmap.total_length, beatmap.max_combo,
+            beatmap.bpm, beatmap.circle_size,
+            beatmap.approach_rate, beatmap.overrall_difficulty,
+            beatmap.health, beatmap.star_rating,
+            beatmap.submit_date, beatmap.last_update,
             session=session
         )
 
-        for beatmap in maps:
-            beatmaps.create(
-                beatmap.beatmap_id, beatmap.beatmapset_id,
-                beatmap.mode, beatmap.beatmap_hash,
-                beatmap.approved, beatmap.version,
-                get_beatmap_filename(beatmap.beatmap_id),
-                beatmap.total_length, beatmap.max_combo,
-                beatmap.bpm, beatmap.circle_size,
-                beatmap.approach_rate, beatmap.overrall_difficulty,
-                beatmap.health, beatmap.star_rating,
-                beatmap.submit_date, beatmap.last_update,
-                session=session
-            )
+    return db_set
 
-        return db_set
-
-def fix_beatmapset(beatmapset: DBBeatmapset) -> List[DBBeatmap]:
+@session_wrapper
+def fix_beatmapset(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
     updated_beatmaps = list()
 
     for beatmap in beatmapset.beatmaps:
@@ -198,7 +205,11 @@ def fix_beatmapset(beatmapset: DBBeatmapset) -> List[DBBeatmap]:
         beatmap_updates['md5'] = beatmap_hash
 
         # Update database
-        beatmaps.update(beatmap.id, beatmap_updates)
+        beatmaps.update(
+            beatmap.id,
+            beatmap_updates,
+            session=session
+        )
 
         updated_beatmaps.append(beatmap)
 
