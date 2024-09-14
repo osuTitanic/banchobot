@@ -30,7 +30,6 @@ def create_embed(set: DBBeatmapset) -> Embed:
     embed.add_field(name='Status', value=status)
     embed.add_field(name='Genre', value=BeatmapGenre(set.genre_id).name)
     embed.add_field(name='Language', value=BeatmapLanguage(set.language_id).name)
-
     return embed
 
 class NextButton(View):
@@ -47,9 +46,7 @@ class NextButton(View):
 
         self.offset += 1
 
-        set = beatmapsets.search_one(self.query, self.offset)
-
-        if not set:
+        if not (set := beatmapsets.search_one(self.query, self.offset)):
             return
 
         app.session.logger.info(
@@ -76,9 +73,7 @@ class NextButton(View):
 
         self.offset -= 1
 
-        set = beatmapsets.search_one(self.query, self.offset)
-
-        if not set:
+        if not (set := beatmapsets.search_one(self.query, self.offset)):
             return
 
         app.session.logger.info(

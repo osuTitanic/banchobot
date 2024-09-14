@@ -4,6 +4,7 @@ from app.common.database.objects import DBScore
 from app.common.constants import Mods
 from app.objects import Context
 
+from titanic_pp_py import Calculator, Beatmap
 from typing import Optional, Tuple
 
 from discord.ui import View, Button
@@ -11,14 +12,11 @@ from discord import Interaction
 from discord import Embed
 from discord import Color
 
-from titanic_pp_py import Calculator, Beatmap
-
 import discord
 import config
 import math
 import app
 import io
-
 
 class ViewReplayButton(View):
     def __init__(self, score: DBScore, *, timeout: Optional[float] = 250):
@@ -60,14 +58,17 @@ async def recent(context: Context):
                 await context.message.channel.send("User not found!")
                 return
 
-        score = scores.fetch_recent_all(user_id=user.id, limit=1, session=session)
+        score_list = scores.fetch_recent_all(
+            user_id=user.id,
+            limit=1,
+            session=session
+        )
 
-        if not score:
+        if not score_list:
             await context.message.channel.send("No recent scores.")
             return
 
-        score = score[0]
-
+        score = score_list[0]
         rank = score.grade
         max_combo = score.max_combo
         accuracy = score.acc
@@ -86,7 +87,6 @@ async def recent(context: Context):
             if_fc_fmt = f"({fc_pp:.2f}pp if FC)"
 
         stars_fmt = f"{stars:0.1f}⭐"
-
         mode_fmt = ('osu!', 'Taiko', 'Ctb', 'Mania')[score.mode]
 
         embed = Embed(
@@ -94,11 +94,10 @@ async def recent(context: Context):
             url=f"http://osu.{config.DOMAIN_NAME}/b/{score.beatmap_id}",
             color=Color.blue(),
         )
+
         embed.set_author(name=f"Recent play for {user.name}")
         embed.set_thumbnail(url=f"https://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
-        embed.set_image(
-            url=f"https://assets.ppy.sh/beatmaps/{score.beatmap.set_id}/covers/cover@2x.jpg"
-        )
+        embed.set_image(url=f"https://assets.ppy.sh/beatmaps/{score.beatmap.set_id}/covers/cover@2x.jpg")
 
         if score.status < 2:
             rank = f"F ({int((score.failtime/1000)/score.beatmap.total_length*100)}%)"
@@ -114,9 +113,8 @@ async def recent(context: Context):
             view=replay
         )
 
-
-def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
-    # fc_pp, star rating
+def get_difficulty_info(score: DBScore) -> Tuple[float, float]:
+    """Get difficulty info for fc_pp and star rating"""
     beatmap_file = app.session.storage.get_beatmap(score.beatmap_id)
 
     if not beatmap_file:
@@ -125,6 +123,7 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
         )
         return 0.0, 0.0
 
+    bm = Beatmap(bytes=beatmap_file)
     mods = Mods(score.mods)
 
     if Mods.Nightcore in mods and not Mods.DoubleTime in mods:
@@ -132,18 +131,14 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float, float]:
         # https://github.com/ppy/osu-api/wiki#mods
         mods |= Mods.DoubleTime
 
-    score.mods = mods.value
-
-    bm = Beatmap(bytes=beatmap_file)
-
     calc = Calculator(
-        mode           = score.mode,
-        mods           = score.mods,
-        n_geki         = score.nGeki,
-        n_katu         = score.nKatu,
-        n300           = score.n300,
-        n100           = score.n100,
-        n50            = score.n50
+        mode = score.mode,
+        mods = mods.value,
+        n_geki = score.nGeki,
+        n_katu = score.nKatu,
+        n300 = score.n300,
+        n100 = score.n100,
+        n50 = score.n50
     )
 
     if not (result := calc.performance(bm)):
