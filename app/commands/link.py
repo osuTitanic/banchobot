@@ -73,14 +73,11 @@ async def create_account(context: Context):
         mention_author=True
     )
 
-    def check(msg: discord.Message):
-        return (msg.author.id == author.id)
-
     try:
         while True:
             msg: discord.Message = await app.session.bot.wait_for(
                 'message',
-                check=check,
+                check=lambda msg: (msg.author.id == author.id),
                 timeout=60
             )
 

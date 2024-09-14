@@ -1,6 +1,6 @@
 
 from app.common.database.repositories import users
-from app.common.cache.leaderboards import top_players
+from app.common.cache import leaderboards
 from app.common.constants import GameMode
 from app.objects import Context
 
@@ -17,28 +17,31 @@ async def leaderboard(context: Context):
         await context.message.channel.send("You don't have an account linked!")
         return
 
-    mode = user.preferred_mode
-    modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
     modes_reversed = {0: "Standard", 1: "Taiko", 2: "Catch The Beat", 3: "Mania"}
+    modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
+    types = ("pp", "score", "total_score", "ppv1")
+
+    mode = user.preferred_mode
     type = "pp"
-    
-    if context.args:
-        for arg in context.args:
-            if arg in modes:
-                mode = modes[arg]
-            elif arg in ["pp", "score", "total_score", "ppv1"]:
-                type = arg
-            else:
-                await context.message.reply(
-                    f"Wrong mode! Available modes: {', '.join(modes.keys())}"
-                )
-                return
+
+    for arg in context.args:
+        if arg in modes:
+            mode = modes[arg]
+        elif arg in types:
+            type = arg
+        else:
+            await context.message.reply(
+                f"Wrong mode! Available modes: {', '.join(modes.keys())}"
+            )
+            return
 
     order_type = {'pp': 'performance', 'score': 'rscore', 'total_score': 'tscore', 'ppv1': 'ppv1'}[type]
     value_name = {'pp': 'pp', 'score': '', 'total_score': '', 'ppv1': 'pp'}[type]
 
-    lb = top_players(
-        mode=mode, range=10, type=order_type
+    lb = leaderboards.top_players(
+        mode=mode,
+        range=10,
+        type=order_type
     )
 
     str = "```"
