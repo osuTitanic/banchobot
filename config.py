@@ -36,8 +36,10 @@ EMAIL = MAILGUN_EMAIL or SENDGRID_EMAIL
 
 OFFICER_WEBHOOK_URL = os.environ.get('OFFICER_WEBHOOK_URL')
 EVENT_WEBHOOK_URL = os.environ.get('EVENT_WEBHOOK_URL')
-OSU_API_KEY = os.environ.get('OSU_API_KEY')
 DOMAIN_NAME = os.environ.get('DOMAIN_NAME')
+
+OSU_CLIENT_ID = os.environ.get('OSU_CLIENT_ID')
+OSU_CLIENT_SECRET = os.environ.get('OSU_CLIENT_SECRET')
 
 APPROVED_MAP_REWARDS = eval(os.environ.get('APPROVED_MAP_REWARDS', 'False').capitalize())
 S3_ENABLED = eval(os.environ.get('ENABLE_S3', 'True').capitalize())

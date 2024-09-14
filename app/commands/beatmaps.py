@@ -9,8 +9,8 @@ from app.common.constants import DatabaseStatus, Mods
 from titanic_pp_py import Calculator, Beatmap
 from datetime import datetime, timedelta
 from app.objects import Context
-from ossapi import OssapiV1
 from discord import Embed
+from ossapi import Ossapi
 
 import app.common
 import hashlib
@@ -23,12 +23,18 @@ async def add_set(set_id: int):
         if beatmapsets.fetch_one(set_id, session):
             return None, 'This beatmapset already exists!'
 
-        api = OssapiV1(config.OSU_API_KEY)
+        api = Ossapi(
+            config.OSU_CLIENT_ID,
+            config.OSU_CLIENT_SECRET
+        )
 
-        if not (maps := api.get_beatmaps(beatmapset_id=set_id)):
+        try:
+            set = api.beatmapset(beatmapset_id=set_id)
+            assert set
+        except (AssertionError, ValueError):
             return None, 'Could not find that beatmapset!'
 
-        db_set = utils.add_beatmapset(set_id, maps, session)
+        db_set = utils.add_beatmapset(set_id, set, session)
         updates = list()
 
         if (db_set := beatmapsets.fetch_one(set_id, session)) is not None:
@@ -177,24 +183,20 @@ async def beatmap_info(context: Context):
             mention_author=True
         )
         return
-        
-    api = OssapiV1(config.OSU_API_KEY)
-    
-    if is_set:
-        maps = api.get_beatmaps(beatmapset_id=id)
-    else:
-        map = api.get_beatmaps(beatmap_id=id)
-        if not map:
-            await context.message.channel.send(
-                f'Beatmap not found.',
-                reference=context.message,
-                mention_author=True
-            )
-            return
 
-        maps = api.get_beatmaps(beatmapset_id=map[0].beatmapset_id)
+    api = Ossapi(
+        config.OSU_CLIENT_ID,
+        config.OSU_CLIENT_SECRET
+    )
 
-    if not maps:
+    try:
+        if is_set:
+            set = api.beatmapset(beatmapset_id=id)
+        else:
+            set = api.beatmapset(beatmap_id=id)
+
+        assert set
+    except (AssertionError, ValueError):
         await context.message.channel.send(
             f'Beatmap not found.',
             reference=context.message,
@@ -202,18 +204,19 @@ async def beatmap_info(context: Context):
         )
         return
 
+    maps = set.beatmaps
     beatmapset = beatmapsets.fetch_one(maps[0].beatmapset_id)
     titanic_status = -2
 
     if beatmapset:
         titanic_status = beatmapset.status
 
-    beatmap_embed = Embed(title=f"{maps[0].artist} - {maps[0].title} ({maps[0].creator})")
-    b_status_name = [status.name for status in DatabaseStatus if status.value == int(maps[0].approved)][0]
+    beatmap_embed = Embed(title=f"{set.artist} - {set.title} ({set.creator})")
+    b_status_name = [status.name for status in DatabaseStatus if status.value == set.status.value][0]
     t_status_name = [status.name for status in DatabaseStatus if status.value == titanic_status][0]
 
     beatmapset_info = ""
-    beatmapset_info += f"Created: {maps[0].submit_date.strftime('%Y/%m/%d')}\nLast Updated: {maps[0].last_update.strftime('%Y/%m/%d')}\n"
+    beatmapset_info += f"Created: {set.submitted_date.strftime('%Y/%m/%d')}\nLast Updated: {set.last_updated.strftime('%Y/%m/%d')}\n"
     beatmapset_info += f"BPM: {maps[0].bpm} Length: {timedelta(seconds=maps[0].total_length)}\n Status: {b_status_name} on Bancho | {t_status_name} on Titanic\n"
 
     beatmap_embed.add_field(
@@ -221,23 +224,23 @@ async def beatmap_info(context: Context):
         value=beatmapset_info,
         inline=False
     )
-    
-    for beatmap in sorted(maps, key=lambda x: x.star_rating, reverse=True):
+
+    for beatmap in sorted(maps, key=lambda x: x.difficulty_rating, reverse=True):
         suffix = ""
 
         if beatmap.mode != 0:
-            suffix = f" ({['osu', 'taiko', 'catch', 'mania'][beatmap.mode]})"
+            suffix = f" ({beatmap.mode.name.lower()})"
 
-        beatmap_info = f"Circles: {beatmap.count_hitcircles} | Sliders: {beatmap.count_sliders} | Spinners: {beatmap.count_spinners} | Max Combo: {beatmap.max_combo}x\n"
-        beatmap_info += f"Original stats:  AR: {beatmap.approach_rate} | OD: {beatmap.overrall_difficulty} | HP: {beatmap.health} | CS: {beatmap.circle_size}\n"
-        beatmap_info += f"Adapted stats: AR: {round(beatmap.approach_rate)}  | OD: {round(beatmap.overrall_difficulty)}  | HP: {round(beatmap.health)}  | CS: {round(beatmap.circle_size)}\n"
+        beatmap_info = f"Circles: {beatmap.count_circles} | Sliders: {beatmap.count_sliders} | Spinners: {beatmap.count_spinners} | Max Combo: {beatmap.max_combo}x\n"
+        beatmap_info += f"Original stats:  AR: {beatmap.ar} | OD: {beatmap.accuracy} | HP: {beatmap.drain} | CS: {beatmap.cs}\n"
+        beatmap_info += f"Adapted stats: AR: {round(beatmap.ar)}  | OD: {round(beatmap.accuracy)}  | HP: {round(beatmap.drain)}  | CS: {round(beatmap.cs)}\n"
 
         try:
             mods_vn = {'NM': 0, 'HR': Mods.HardRock, 'HDDT': Mods.Hidden+Mods.DoubleTime}
             mods_rx = {'RX': Mods.Relax, 'HDDTRX': Mods.Hidden+Mods.DoubleTime+Mods.Relax, 'HDDTHRRX': Mods.HardRock+Mods.Hidden+Mods.DoubleTime+Mods.Relax}
             pp_info = ""
 
-            if (beatmap_file := app.session.storage.get_beatmap(beatmap.beatmap_id)):
+            if (beatmap_file := app.session.storage.get_beatmap(beatmap.id)):
                 bm = Beatmap(bytes=beatmap_file)
                 pp_info += "PP: "
 
@@ -248,7 +251,7 @@ async def beatmap_info(context: Context):
 
                 pp_info = pp_info[:-2]
 
-                if beatmap.mode != 3:
+                if beatmap.mode.value != 3:
                     pp_info += "\nPP: "
 
                     for combo_name, mod_value in mods_rx.items():
@@ -257,12 +260,13 @@ async def beatmap_info(context: Context):
                         pp_info += f"{combo_name}: {result.pp:.0f} | "
 
                     pp_info = pp_info[:-2]
+
                 beatmap_info += f"{pp_info}\n"
         except:
             app.session.logger.warning(f"Failed to calculate performance!", exc_info=True)
 
         beatmap_embed.add_field(
-            name=f"{beatmap.star_rating:.1f}* {beatmap.version}{suffix}",
+            name=f"{beatmap.difficulty_rating:.1f}* {beatmap.version}{suffix}",
             value=beatmap_info,
             inline=False
         )

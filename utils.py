@@ -4,7 +4,7 @@ from app.common.database import DBBeatmap, DBBeatmapset
 from app.common.database import beatmapsets, beatmaps
 from typing import Dict, Union, List, Tuple
 from sqlalchemy.orm import Session
-from ossapi import Beatmap
+from ossapi import Beatmapset
 
 import hashlib
 import config
@@ -116,7 +116,7 @@ def get_beatmap_file(beatmap_dict: Dict[str, dict], format_version: int) -> byte
 @session_wrapper
 def add_beatmapset(
     set_id: int,
-    maps: List[Beatmap],
+    set: Beatmapset,
     session: Session = ...
 ) -> DBBeatmapset:
     filesize = 0
@@ -125,34 +125,36 @@ def add_beatmapset(
     if (response := app.session.storage.api.osz(set_id, no_video=False)):
         filesize = int(response.headers.get('Content-Length', default=0))
 
-    if maps[0].video and (response := app.session.storage.api.osz(set_id, no_video=True)):
+    if set.video and (response := app.session.storage.api.osz(set_id, no_video=True)):
         filesize_novideo = int(response.headers.get('Content-Length', default=0))
 
     db_set = beatmapsets.create(
-        maps[0].beatmapset_id,
-        maps[0].title, maps[0].artist,
-        maps[0].creator, maps[0].source,
-        maps[0].tags, maps[0].approved,
-        maps[0].video, maps[0].storyboard,
-        maps[0].language_id, maps[0].genre_id,
+        set.id,
+        set.title, set.title_unicode,
+        set.artist, set.artist_unicode,
+        set.creator, set.source,
+        set.tags, set.status.value,
+        set.video, set.storyboard,
+        set.language['id'], set.genre['id'],
         filesize, filesize_novideo,
-        submit_date=maps[0].submit_date,
-        approved_date=maps[0].approved_date,
-        last_update=maps[0].last_update,
+        available=(not set.availability.download_disabled),
+        submit_date=set.submitted_date,
+        approved_date=set.ranked_date,
+        last_update=set.last_updated,
         session=session
     )
 
-    for beatmap in maps:
+    for beatmap in set.beatmaps:
         beatmaps.create(
-            beatmap.beatmap_id, beatmap.beatmapset_id,
-            beatmap.mode, beatmap.beatmap_hash,
-            beatmap.approved, beatmap.version,
-            get_beatmap_filename(beatmap.beatmap_id),
+            beatmap.id, beatmap.beatmapset_id,
+            beatmap.mode_int, beatmap.checksum,
+            beatmap.status.value, beatmap.version,
+            get_beatmap_filename(beatmap.id),
             beatmap.total_length, beatmap.max_combo,
-            beatmap.bpm, beatmap.circle_size,
-            beatmap.approach_rate, beatmap.overrall_difficulty,
-            beatmap.health, beatmap.star_rating,
-            beatmap.submit_date, beatmap.last_update,
+            beatmap.bpm, beatmap.cs,
+            beatmap.ar, beatmap.accuracy,
+            beatmap.drain, beatmap.difficulty_rating,
+            set.submitted_date, beatmap.last_updated,
             session=session
         )
 
