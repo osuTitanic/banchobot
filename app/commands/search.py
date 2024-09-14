@@ -98,36 +98,35 @@ class NextButton(View):
 async def search(context: Context):
     """Search up a beatmap"""
 
-    async with context.message.channel.typing():
-        query = ' '.join(context.args)
+    query = ' '.join(context.args)
 
-        app.session.logger.info(
-            f'[{context.message.author}] -> Requesting beatmap: "{query}"'
-        )
+    app.session.logger.info(
+        f'[{context.message.author}] -> Requesting beatmap: "{query}"'
+    )
 
-        if len(query) <= 2:
-            await context.message.channel.send(
-                'Query too short!'
-            )
-            return
-
-        set = beatmapsets.search_one(query)
-
-        if not set:
-            await context.message.channel.send(
-                'No maps were found!'
-            )
-            return
-
-        app.session.logger.info(
-            f'[{context.message.author}] -> Found beatmap: "{set.full_name}"'
-        )
-
+    if len(query) <= 2:
         await context.message.channel.send(
-            embed=create_embed(set),
-            view=NextButton(
-                query=query,
-                timeout=30,
-                offset=1
-            )
+            'Query too short!'
         )
+        return
+
+    set = beatmapsets.search_one(query)
+
+    if not set:
+        await context.message.channel.send(
+            'No maps were found!'
+        )
+        return
+
+    app.session.logger.info(
+        f'[{context.message.author}] -> Found beatmap: "{set.full_name}"'
+    )
+
+    await context.message.channel.send(
+        embed=create_embed(set),
+        view=NextButton(
+            query=query,
+            timeout=30,
+            offset=1
+        )
+    )

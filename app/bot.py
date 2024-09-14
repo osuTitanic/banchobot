@@ -49,21 +49,22 @@ class BanchoBot(discord.Client):
             )
             return
 
-        try:
-            # Try to execute command
-            await command.function(
-                Context(trigger, args, message)
-            )
-        except Exception as e:
-            app.session.logger.error(
-                f'Failed to execute command {config.BOT_PREFIX}{trigger}: {e}',
-                exc_info=e
-            )
-            await message.channel.send(
-                'An error occured while running this command.',
-                mention_author=True,
-                reference=message
-            )
+        async with message.channel.typing():
+            try:
+                # Try to execute command
+                await command.function(
+                    Context(trigger, args, message)
+                )
+            except Exception as e:
+                app.session.logger.error(
+                    f'Failed to execute command {config.BOT_PREFIX}{trigger}: {e}',
+                    exc_info=e
+                )
+                await message.channel.send(
+                    'An error occured while running this command.',
+                    mention_author=True,
+                    reference=message
+                )
 
 intents = discord.Intents.default()
 intents.message_content = True

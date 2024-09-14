@@ -50,69 +50,68 @@ async def add_beatmapset(context: Context):
 
         return db_set, updates
 
-    async with context.message.channel.typing():
-        if context.message.attachments:
-            if not context.message.attachments[0].content_type.startswith('text/plain'):
-                await context.message.channel.send(
-                    f'Attach a proper beatmap list.',
-                    reference=context.message,
-                    mention_author=True
-                )
-                return
-
-            file = await context.message.attachments[0].read()
-
-            added_count = 0
-            updates_count = 0
-            error = list()
-
-            for set_id in file.decode().split('\n'):
-                if not set_id:
-                    break
-                if not set_id.strip().isnumeric():
-                    error.append(set_id)
-                    continue
-
-                set_id = int(set_id.strip())
-                db_set, updates = await add_set(set_id)
-
-                if not db_set:
-                    error.append(str(set_id))
-                else:
-                    added_count += 1
-                    updates_count += len(updates)
-
+    if context.message.attachments:
+        if not context.message.attachments[0].content_type.startswith('text/plain'):
             await context.message.channel.send(
-                f'Added {added_count} sets. ({updates_count} edited, {len(error)} errored out.)',
+                f'Attach a proper beatmap list.',
                 reference=context.message,
                 mention_author=True
             )
+            return
 
-            if error:
-                await context.message.channel.send(
-                f'These beatmap could not be added:\n```{" ".join(error)}```',
-                reference=context.message,
-                mention_author=True
-                )
-        else:
-            set_id = int(context.args[0])
+        file = await context.message.attachments[0].read()
+
+        added_count = 0
+        updates_count = 0
+        error = list()
+
+        for set_id in file.decode().split('\n'):
+            if not set_id:
+                break
+            if not set_id.strip().isnumeric():
+                error.append(set_id)
+                continue
+
+            set_id = int(set_id.strip())
             db_set, updates = await add_set(set_id)
 
             if not db_set:
-                await context.message.channel.send(
-                    updates,
-                    reference=context.message,
-                    mention_author=True
-                )
-                return
-            
-            post_beatmapset_change(set_id)
-            
+                error.append(str(set_id))
+            else:
+                added_count += 1
+                updates_count += len(updates)
+
+        await context.message.channel.send(
+            f'Added {added_count} sets. ({updates_count} edited, {len(error)} errored out.)',
+            reference=context.message,
+            mention_author=True
+        )
+
+        if error:
             await context.message.channel.send(
-                f'[Beatmapset was created. ({len(updates)} edited)](http://osu.{config.DOMAIN_NAME}/s/{db_set.id})',
+            f'These beatmap could not be added:\n```{" ".join(error)}```',
+            reference=context.message,
+            mention_author=True
+            )
+    else:
+        set_id = int(context.args[0])
+        db_set, updates = await add_set(set_id)
+
+        if not db_set:
+            await context.message.channel.send(
+                updates,
                 reference=context.message,
                 mention_author=True
             )
+            return
+
+        post_beatmapset_change(set_id)
+
+        await context.message.channel.send(
+            f'[Beatmapset was created. ({len(updates)} edited)](http://osu.{config.DOMAIN_NAME}/s/{db_set.id})',
+            reference=context.message,
+            mention_author=True
+        )
 
 @app.session.commands.register(['fixset'], roles=['Admin', 'BAT'])
 async def fix_beatmapset(context: Context):
@@ -128,27 +127,26 @@ async def fix_beatmapset(context: Context):
 
     set_id = int(context.args[0])
 
-    async with context.message.channel.typing():
-        with app.session.database.managed_session() as session:
-            if not (beatmapset := beatmapsets.fetch_one(set_id, session=session)):
-                await context.message.channel.send(
-                    'This beatmapset does not exist!',
-                    reference=context.message,
-                    mention_author=True
-                )
-                return
+    with app.session.database.managed_session() as session:
+        if not (beatmapset := beatmapsets.fetch_one(set_id, session=session)):
+            await context.message.channel.send(
+                'This beatmapset does not exist!',
+                reference=context.message,
+                mention_author=True
+            )
+            return
 
-            updates = utils.fix_beatmapset(beatmapset)
-            embed = Embed(title="Beatmap updates", description="Changes:\n")
+        updates = utils.fix_beatmapset(beatmapset)
+        embed = Embed(title="Beatmap updates", description="Changes:\n")
 
-            for updated_map in updates:
-                embed.description += f"[{updated_map.version}](http://osu.{config.DOMAIN_NAME}/b/{updated_map.id})\n"
+        for updated_map in updates:
+            embed.description += f"[{updated_map.version}](http://osu.{config.DOMAIN_NAME}/b/{updated_map.id})\n"
 
-        await context.message.channel.send(
-            embed=embed,
-            reference=context.message,
-            mention_author=True
-        )
+    await context.message.channel.send(
+        embed=embed,
+        reference=context.message,
+        mention_author=True
+    )
 
 @app.session.commands.register(['beatmap_info'])
 async def beatmap_info(context: Context):
@@ -304,8 +302,8 @@ async def change_beatmapset_status(context: Context):
         return
 
     index = 1 if not context.message.attachments else 0
-
     status, err = parse_status(context.args[index])
+
     if err:
         await context.message.channel.send(
             err,
@@ -314,46 +312,25 @@ async def change_beatmapset_status(context: Context):
         )
         return
 
-    async with context.message.channel.typing():
-        with app.session.database.session as session:
-            if context.message.attachments:
+    with app.session.database.session as session:
+        if context.message.attachments:
 
-                file = await context.message.attachments[0].read()
-                rows_changed = 0
+            file = await context.message.attachments[0].read()
+            rows_changed = 0
 
-                for set_id in file.decode().split('\n'):
-                    if not set_id:
-                        break
+            for set_id in file.decode().split('\n'):
+                if not set_id:
+                    break
 
-                    if not set_id.strip().isnumeric():
-                        await context.message.channel.send(
-                            'Attach a proper beatmap list.',
-                            reference=context.message,
-                            mention_author=True
-                        )
-                        return
-
-                    set_id = int(set_id.strip())
-                    beatmapsets.update(
-                        set_id,
-                        updates={
-                            'status': status,
-                            'last_update': datetime.now(),
-                            'approved_at': datetime.now() if status > DatabaseStatus.Pending else None
-                        },
-                        session=session
+                if not set_id.strip().isnumeric():
+                    await context.message.channel.send(
+                        'Attach a proper beatmap list.',
+                        reference=context.message,
+                        mention_author=True
                     )
-                    rows_changed += beatmaps.update_by_set_id(
-                        set_id,
-                        updates={
-                            'status': status,
-                            'last_update': datetime.now()
-                        },
-                        session=session
-                    )
-                session.commit()
-            else:
-                set_id = int(context.args[0])
+                    return
+
+                set_id = int(set_id.strip())
                 beatmapsets.update(
                     set_id,
                     updates={
@@ -363,7 +340,7 @@ async def change_beatmapset_status(context: Context):
                     },
                     session=session
                 )
-                rows_changed = beatmaps.update_by_set_id(
+                rows_changed += beatmaps.update_by_set_id(
                     set_id,
                     updates={
                         'status': status,
@@ -371,14 +348,34 @@ async def change_beatmapset_status(context: Context):
                     },
                     session=session
                 )
-                post_beatmapset_change(set_id)
-                session.commit()
+            session.commit()
+        else:
+            set_id = int(context.args[0])
+            beatmapsets.update(
+                set_id,
+                updates={
+                    'status': status,
+                    'last_update': datetime.now(),
+                    'approved_at': datetime.now() if status > DatabaseStatus.Pending else None
+                },
+                session=session
+            )
+            rows_changed = beatmaps.update_by_set_id(
+                set_id,
+                updates={
+                    'status': status,
+                    'last_update': datetime.now()
+                },
+                session=session
+            )
+            post_beatmapset_change(set_id)
+            session.commit()
 
-        await context.message.channel.send(
-            f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
-            reference=context.message,
-            mention_author=True
-        )
+    await context.message.channel.send(
+        f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
+        reference=context.message,
+        mention_author=True
+    )
 
 
 @app.session.commands.register(['moddiff'], roles=['BAT', 'Admin'])
@@ -386,7 +383,12 @@ async def change_beatmap_status(context: Context):
     """<beatmap_id> <status> - Modify a beatmap status"""
 
     if context.message.attachments:
-        if len(context.args) < 1 or not context.message.attachments[0].content_type.startswith('text/plain'):
+        is_valid_list = (
+            len(context.args) >= 1 and
+            context.message.attachments[0].content_type.startswith('text/plain')
+        )
+
+        if not is_valid_list:
             await context.message.channel.send(
                 f'Invalid syntax: `!{context.command} <beatmap_id> <status>`',
                 reference=context.message,
@@ -394,17 +396,23 @@ async def change_beatmap_status(context: Context):
             )
             return
 
-    elif len(context.args) < 2 or not context.args[0].isnumeric():
-        await context.message.channel.send(
-            f'Invalid syntax: `!{context.command} <beatmap_id> <status>`',
-            reference=context.message,
-            mention_author=True
+    else:
+        has_valid_args = (
+            len(context.args) >= 2 and
+            context.args[0].isnumeric()
         )
-        return
+
+        if not has_valid_args:
+            await context.message.channel.send(
+                f'Invalid syntax: `!{context.command} <beatmap_id> <status>`',
+                reference=context.message,
+                mention_author=True
+            )
+            return
 
     index = 1 if not context.message.attachments else 0
-
     status, err = parse_status(context.args[index])
+
     if err:
         await context.message.channel.send(
             err,
@@ -413,54 +421,53 @@ async def change_beatmap_status(context: Context):
         )
         return
 
-    async with context.message.channel.typing():
-        with app.session.database.session as session:
-            if context.message.attachments:
+    with app.session.database.session as session:
+        if context.message.attachments:
 
-                file = await context.message.attachments[0].read()
-                rows_changed = 0
+            file = await context.message.attachments[0].read()
+            rows_changed = 0
 
-                for beatmap_id in file.decode().split('\n'):
-                    if not beatmap_id:
-                        break
+            for beatmap_id in file.decode().split('\n'):
+                if not beatmap_id:
+                    break
 
-                    if not beatmap_id.strip().isnumeric():
-                        await context.message.channel.send(
-                            'Attach a proper beatmap list.',
-                            reference=context.message,
-                            mention_author=True
-                        )
-                        return
-
-                    beatmap_id = int(beatmap_id.strip())
-                    rows_changed += beatmaps.update(
-                        beatmap_id,
-                        updates={'status': status, 'last_update': datetime.now()},
-                        session=session
+                if not beatmap_id.strip().isnumeric():
+                    await context.message.channel.send(
+                        'Attach a proper beatmap list.',
+                        reference=context.message,
+                        mention_author=True
                     )
+                    return
 
-                session.commit()
-
-            else:
-                beatmap_id = int(context.args[0])
-                rows_changed = beatmaps.update(
+                beatmap_id = int(beatmap_id.strip())
+                rows_changed += beatmaps.update(
                     beatmap_id,
                     updates={'status': status, 'last_update': datetime.now()},
                     session=session
                 )
-                post_beatmap_change(beatmap_id)
-                session.commit()
 
-        await context.message.channel.send(
-            f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
-            reference=context.message,
-            mention_author=True
-        )
+            session.commit()
 
-def post_beatmapset_change(beatmapset_id: int):
-    beatmapset = beatmapsets.fetch_one(beatmapset_id)
-    if not beatmapset:
+        else:
+            beatmap_id = int(context.args[0])
+            rows_changed = beatmaps.update(
+                beatmap_id,
+                updates={'status': status, 'last_update': datetime.now()},
+                session=session
+            )
+            post_beatmap_change(beatmap_id)
+            session.commit()
+
+    await context.message.channel.send(
+        f'Changed {rows_changed} {"beatmap" if rows_changed == 1 else "beatmaps"}.',
+        reference=context.message,
+        mention_author=True
+    )
+
+def post_beatmapset_change(beatmapset_id: int) -> None:
+    if not (beatmapset := beatmapsets.fetch_one(beatmapset_id)):
         return
+
     status_name = [status.name for status in DatabaseStatus if status.value == beatmapset.status][0]
     embed = WebhookEmbed(title=f'Status change: {beatmapset.title}')
     embed.image = Image(url=f'https://assets.ppy.sh/beatmaps/{beatmapset.id}/covers/cover.jpg')
@@ -472,10 +479,10 @@ def post_beatmapset_change(beatmapset_id: int):
     embed.add_field(name="Titanic url", value=f"https://osu.{config.DOMAIN_NAME}/s/{beatmapset.id}", inline=True)
     app.common.officer.event(embeds=[embed])
 
-def post_beatmap_change(beatmap_id: int):
-    beatmap = beatmaps.fetch_by_id(beatmap_id)
-    if not beatmap:
+def post_beatmap_change(beatmap_id: int) -> None:
+    if not (beatmap := beatmaps.fetch_by_id(beatmap_id)):
         return
+
     beatmapset = beatmap.beatmapset
     status_name = [status.name for status in DatabaseStatus if status.value == beatmap.status][0]
     embed = WebhookEmbed(title=f'Status change: {beatmapset.title} ({beatmap.version})')
@@ -489,90 +496,88 @@ def post_beatmap_change(beatmap_id: int):
     app.common.officer.event(embeds=[embed])
 
 @app.session.commands.register(['fixhash'], roles=['BAT', 'Admin'])
-async def fix_beatmap_hashes(ctx: Context):
+async def fix_beatmap_hashes(context: Context):
     """<beatmapset_id> - Update the hashes of a beatmapset"""
-    if not ctx.args:
-        await ctx.message.channel.send('Invalid syntax: `!fixhash <beatmapset_id>`')
+    if not context.args:
+        await context.message.channel.send('Invalid syntax: `!fixhash <beatmapset_id>`')
         return
 
-    if not ctx.args[0].isnumeric():
-        await ctx.message.channel.send('Invalid syntax: `!fixhash <beatmapset_id>`')
+    if not context.args[0].isnumeric():
+        await context.message.channel.send('Invalid syntax: `!fixhash <beatmapset_id>`')
         return
 
-    beatmapset_id = int(ctx.args[0])
+    beatmapset_id = int(context.args[0])
 
-    async with ctx.message.channel.typing():
-        with app.session.database.session as session:
-            beatmapset = beatmapsets.fetch_one(
-                beatmapset_id,
-                session=session
-            )
+    with app.session.database.session as session:
+        beatmapset = beatmapsets.fetch_one(
+            beatmapset_id,
+            session=session
+        )
 
-            if not beatmapset:
-                await ctx.message.channel.send('Beatmapset was not found.')
-                return
+        if not beatmapset:
+            await context.message.channel.send('Beatmapset was not found.')
+            return
 
-            for beatmap in beatmapset.beatmaps:
-                custom_beatmap = app.session.storage.get_beatmap_internal(beatmap.id)
+        for beatmap in beatmapset.beatmaps:
+            custom_beatmap = app.session.storage.get_beatmap_internal(beatmap.id)
 
-                if custom_beatmap:
-                    # We have a custom file for this beatmap
-                    beatmap_hash = hashlib.md5(custom_beatmap).hexdigest()
+            if custom_beatmap:
+                # We have a custom file for this beatmap
+                beatmap_hash = hashlib.md5(custom_beatmap).hexdigest()
 
-                else:
-                    response = app.session.requests.get(f'https://api.osu.direct/b/{beatmap.id}')
-                    response.raise_for_status()
+            else:
+                response = app.session.requests.get(f'https://api.osu.direct/b/{beatmap.id}')
+                response.raise_for_status()
 
-                    beatmap_hash = response.json()['FileMD5']
-
-                beatmaps.update(
-                    beatmap.id,
-                    updates={'md5': beatmap_hash},
-                    session=session
-                )
-
-            await ctx.message.channel.send(
-                f'Updated hashes for {len(beatmapset.beatmaps)} beatmaps.'
-            )
-
-@app.session.commands.register(['uploadbeatmap', 'uploadmap'], roles=['BAT', 'Admin'])
-async def upload_beatmap_file(ctx: Context):
-    """<beatmap_id> - Update the hashes of a beatmapset"""
-    if not ctx.args:
-        await ctx.message.channel.send('Invalid syntax: `!uploadbeatmap <beatmap_id>`')
-        return
-
-    if not ctx.args[0].isnumeric():
-        await ctx.message.channel.send('Invalid syntax: `!uploadbeatmap <beatmap_id>`')
-        return
-
-    if not ctx.message.attachments:
-        await ctx.message.channel.send('Attach a beatmap file.')
-        return
-
-    beatmap_id = int(ctx.args[0])
-
-    async with ctx.message.channel.typing():
-        with app.session.database.managed_session() as session:
-            beatmap = beatmaps.fetch_by_id(beatmap_id, session=session)
-
-            if not beatmap:
-                await ctx.message.channel.send('Beatmap was not found.')
-                return
-
-            file = await ctx.message.attachments[0].read()
-
-            app.session.storage.upload_beatmap_file(
-                beatmap.id,
-                file
-            )
+                beatmap_hash = response.json()['FileMD5']
 
             beatmaps.update(
                 beatmap.id,
-                updates={'md5': hashlib.md5(file).hexdigest()},
+                updates={'md5': beatmap_hash},
                 session=session
             )
 
-        await ctx.message.channel.send(
-            f'Uploaded beatmap file for "{beatmap.version}".'
+        await context.message.channel.send(
+            f'Updated hashes for {len(beatmapset.beatmaps)} beatmaps.'
         )
+
+@app.session.commands.register(['uploadbeatmap', 'uploadmap'], roles=['BAT', 'Admin'])
+async def upload_beatmap_file(context: Context):
+    """<beatmap_id> - Update the hashes of a beatmapset"""
+    if not context.args:
+        await context.message.channel.send('Invalid syntax: `!uploadbeatmap <beatmap_id>`')
+        return
+
+    if not context.args[0].isnumeric():
+        await context.message.channel.send('Invalid syntax: `!uploadbeatmap <beatmap_id>`')
+        return
+
+    if not context.message.attachments:
+        await context.message.channel.send('Attach a beatmap file.')
+        return
+
+    beatmap_id = int(context.args[0])
+
+    with app.session.database.managed_session() as session:
+        beatmap = beatmaps.fetch_by_id(beatmap_id, session=session)
+
+        if not beatmap:
+            await context.message.channel.send('Beatmap was not found.')
+            return
+
+        file = await context.message.attachments[0].read()
+
+        app.session.storage.upload_beatmap_file(
+            beatmap.id,
+            file
+        )
+
+        beatmaps.update(
+            beatmap.id,
+            updates={'md5': hashlib.md5(file).hexdigest()},
+            session=session
+        )
+
+    await context.message.channel.send(
+        f'Uploaded beatmap file for "{beatmap.version}".'
+    )
