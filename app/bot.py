@@ -20,19 +20,6 @@ class BanchoBot(discord.Client):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        
-        if not message.content.startswith(config.BOT_PREFIX):
-            if type(message.channel) == discord.threads.Thread:
-                channel = app.bot.client.get_channel(message.channel.parent_id)
-                if channel.name != "map-requests":
-                    return
-                for url in BEATMAP_URLS:
-                    if url in message.content.lower():
-                        await beatmap_info(
-                            Context("beatmap_info", message.content.split(" "), message)
-                        )
-                        break
-            return
 
         # Parse command
         trigger, *args = shlex.split(message.content.strip()[1:])
