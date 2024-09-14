@@ -19,20 +19,20 @@ import utils
 import app
 
 async def add_set(set_id: int):
-    if beatmapsets.fetch_one(set_id):
-        return None, 'This beatmapset already exists!'
-
-    api = OssapiV1(config.OSU_API_KEY)
-
-    if not (maps := api.get_beatmaps(beatmapset_id=set_id)):
-        return None, 'Could not find that beatmapset!'
-
-    db_set = utils.add_beatmapset(set_id, maps)
-    updates = list()
-
     with app.session.database.managed_session() as session:
+        if beatmapsets.fetch_one(set_id, session):
+            return None, 'This beatmapset already exists!'
+
+        api = OssapiV1(config.OSU_API_KEY)
+
+        if not (maps := api.get_beatmaps(beatmapset_id=set_id)):
+            return None, 'Could not find that beatmapset!'
+
+        db_set = utils.add_beatmapset(set_id, maps, session)
+        updates = list()
+
         if (db_set := beatmapsets.fetch_one(set_id, session)) is not None:
-            updates = utils.fix_beatmapset(db_set)
+            updates = utils.fix_beatmapset(db_set, session)
 
     return db_set, updates
 
@@ -137,7 +137,7 @@ async def fix_beatmapset(context: Context):
             )
             return
 
-        updates = utils.fix_beatmapset(beatmapset)
+        updates = utils.fix_beatmapset(beatmapset, session)
         embed = Embed(title="Beatmap updates", description="Changes:\n")
 
         for updated_map in updates:
