@@ -20,14 +20,14 @@ async def top(context: Context):
         mode = user.preferred_mode
         modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
 
-        if len(context.args):
-            if context.args[0] in modes:
-                mode = modes[context.args[0]]
-            else:
+        if context.args:
+            if context.args[0] not in modes:
                 await context.message.reply(
                     f"Wrong mode! Available modes: {', '.join(modes.keys())}"
                 )
                 return
+
+            mode = modes[context.args[0]]
 
         if len(context.args) > 1:
             if not (user := users.fetch_by_name_extended(context.args[1], session=session)):

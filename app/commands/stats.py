@@ -22,16 +22,15 @@ async def stats(context: Context):
         mode = user.preferred_mode
         modes = {"std": 0, "taiko": 1, "ctb": 2, "mania": 3}
 
-        if context.args:
-            for args in context.args:
-                if args in modes:
-                    mode = modes[args]
-                    continue
+        for args in context.args:
+            if args in modes:
+                mode = modes[args]
+                continue
 
-                user = users.fetch_by_name_extended(args, session=session)
-                if not user:
-                    await context.message.channel.send("User not found!")
-                    return
+            user = users.fetch_by_name_extended(args, session=session)
+            if not user:
+                await context.message.channel.send("User not found!")
+                return
 
         if not user.stats:
             await context.message.channel.send("Please log in to bancho first, to see your stats!")
