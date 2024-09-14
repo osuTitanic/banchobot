@@ -44,7 +44,7 @@ async def add_beatmapset(context: Context):
         updates = list()
 
         # We need to get beatmapset from database to fix relationships
-        with app.session.database.session as session:
+        with app.session.database.managed_session() as session:
             if (db_set := session.get(DBBeatmapset, set_id)) is not None:
                 updates = utils.fix_beatmapset(db_set)
 
@@ -312,7 +312,7 @@ async def change_beatmapset_status(context: Context):
         )
         return
 
-    with app.session.database.session as session:
+    with app.session.database.managed_session() as session:
         if context.message.attachments:
 
             file = await context.message.attachments[0].read()
@@ -421,9 +421,18 @@ async def change_beatmap_status(context: Context):
         )
         return
 
-    with app.session.database.session as session:
-        if context.message.attachments:
+    with app.session.database.managed_session() as session:
+        if not context.message.attachments:
+            beatmap_id = int(context.args[0])
+            rows_changed = beatmaps.update(
+                beatmap_id,
+                updates={'status': status, 'last_update': datetime.now()},
+                session=session
+            )
+            post_beatmap_change(beatmap_id)
+            session.commit()
 
+        else:
             file = await context.message.attachments[0].read()
             rows_changed = 0
 
@@ -446,16 +455,6 @@ async def change_beatmap_status(context: Context):
                     session=session
                 )
 
-            session.commit()
-
-        else:
-            beatmap_id = int(context.args[0])
-            rows_changed = beatmaps.update(
-                beatmap_id,
-                updates={'status': status, 'last_update': datetime.now()},
-                session=session
-            )
-            post_beatmap_change(beatmap_id)
             session.commit()
 
     await context.message.channel.send(
@@ -508,7 +507,7 @@ async def fix_beatmap_hashes(context: Context):
 
     beatmapset_id = int(context.args[0])
 
-    with app.session.database.session as session:
+    with app.session.database.managed_session() as session:
         beatmapset = beatmapsets.fetch_one(
             beatmapset_id,
             session=session

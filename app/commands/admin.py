@@ -153,7 +153,7 @@ async def rename(context: Context):
         return
 
     username = " ".join(context.args[1:])
-    
+
     if context.args[0].isnumeric():
         # Get internal user id
         discord_id = None
