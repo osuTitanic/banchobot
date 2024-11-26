@@ -1,5 +1,5 @@
 bcrypt==4.2.1
-boto3==1.35.54
+boto3==1.35.69
 boto3-type-annotations-with-docs==0.3.1
 discord.py==2.4.0
 geoip2==4.8.0
