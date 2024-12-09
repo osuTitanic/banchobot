@@ -17,7 +17,7 @@ import app
 def top_score(mode: int, mods: int, exclude: List[int] = [], session: Session | None = None) -> DBScore:
     query = session.query(DBScore).filter(
         DBScore.mode == mode,
-        DBScore.status == 3
+        DBScore.status_pp == 3
     )
     if mods:
         query = query.filter(DBScore.mods.op("&")(mods) > 0)
