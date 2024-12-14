@@ -119,15 +119,7 @@ async def unrestrict(context: Context):
         groups.create_entry(user.id, 1000, session=session)
 
         # Restore scores
-        try:
-            scores.restore_hidden_scores(user.id, session=session)
-            stats.restore(user.id, session=session)
-        except Exception as e:
-            app.session.logger.error(
-                f'Failed to restore scores of player "{context.args[0]}": {e}',
-                exc_info=e
-            )
-            await context.message.reply("Failed to restore scores!")
+        scores.restore_hidden_scores(user.id, session=session)
 
         for user_stats in stats.fetch_all(user.id, session=session):
             leaderboards.update(
