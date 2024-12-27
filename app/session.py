@@ -38,5 +38,5 @@ bot: Optional[Client] = None
 
 requests = Session()
 requests.headers = {
-    'User-Agent': f'banchobot-{config.VERSION}'
+    'User-Agent': f'osuTitanic/banchobot ({config.DOMAIN_NAME})'
 }
