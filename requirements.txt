@@ -5,7 +5,7 @@ discord.py==2.4.0
 geoip2==5.0.1
 ossapi==5.2.0
 psycopg2-binary==2.9.10
-python-dotenv==1.0.1
+python-dotenv==1.1.0
 redis==5.2.1
 requests==2.32.3
 sendgrid==6.11.0
