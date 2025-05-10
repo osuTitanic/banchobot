@@ -154,4 +154,6 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float]:
         )
         return 0.0, 0.0
 
-    return result.pp, result.difficulty.stars
+    relaxing = Mods.Relax in mods or Mods.Autopilot in mods
+    mode_multiplier = 0.15 if score.mode != 0 and relaxing else 1.0
+    return result.pp * mode_multiplier, result.difficulty.stars
