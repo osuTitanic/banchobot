@@ -60,9 +60,12 @@ async def simulate(context: Context):
         await context.message.reply(f"The requested beatmap was not found.")
         return
 
+    mode = args.get('mode', 0)
+    mods = args.get('mods', 0)
+
     perf = Performance(lazer=False)
     beatmap = Beatmap(bytes=beatmap_file)
-    beatmap.convert(performance.convert_mode(args.get('mode', 0)), args.get('mods', 0))
+    beatmap.convert(performance.convert_mode(mode), mods)
 
     functions = {
         'acc': perf.set_accuracy,
@@ -81,4 +84,8 @@ async def simulate(context: Context):
             functions[key](value)
 
     result = perf.calculate(beatmap)
-    await context.message.reply(f"PP: {result.pp:.2f}")
+    relaxing = Mods.Relax in mods or Mods.Autopilot in mods
+    mode_multiplier = 0.15 if mode != 0 and relaxing else 1.0
+    pp = result.pp * mode_multiplier
+
+    await context.message.reply(f"PP: {pp:.2f}")
