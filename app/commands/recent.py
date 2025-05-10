@@ -134,7 +134,6 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float]:
         mods |= Mods.DoubleTime
 
     calc = Performance(
-        mode=score.mode,
         mods=mods.value,
         n_geki=score.nGeki,
         n_katu=score.nKatu,
