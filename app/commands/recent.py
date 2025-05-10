@@ -1,6 +1,7 @@
 
 from app.common.database.repositories import users, scores
 from app.common.database.objects import DBScore
+from app.common.helpers import performance
 from app.common.constants import Mods
 from app.objects import Context
 
@@ -125,7 +126,7 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float]:
 
     mods = Mods(score.mods)
     bm = Beatmap(bytes=beatmap_file)
-    bm.convert(score.mode, mods.value)
+    bm.convert(performance.convert_mode(score.mode), mods.value)
 
     if Mods.Nightcore in mods and not Mods.DoubleTime in mods:
         # NC somehow only appears with DT enabled at the same time...?

@@ -1,5 +1,6 @@
 
 from rosu_pp_py import Performance, Beatmap
+from app.common.helpers import performance
 from app.common.constants import Mods
 from app.objects import Context
 
@@ -61,7 +62,7 @@ async def simulate(context: Context):
 
     perf = Performance(lazer=False)
     beatmap = Beatmap(bytes=beatmap_file)
-    beatmap.convert(args.get('mode', 0), args.get('mods', 0))
+    beatmap.convert(performance.convert_mode(args.get('mode', 0)), args.get('mods', 0))
 
     functions = {
         'acc': perf.set_accuracy,
