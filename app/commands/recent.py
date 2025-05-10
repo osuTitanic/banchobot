@@ -142,7 +142,7 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float]:
         n50=score.n50
     )
 
-    if not (result := calc.performance(bm)):
+    if not (result := calc.calculate(bm)):
         app.session.logger.error(
             'pp calculation failed: No result'
         )
