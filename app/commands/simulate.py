@@ -80,5 +80,5 @@ async def simulate(context: Context):
         if key in functions:
             functions[key](value)
 
-    result = perf.performance(beatmap)
+    result = perf.calculate(beatmap)
     await context.message.reply(f"PP: {result.pp:.2f}")
