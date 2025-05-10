@@ -60,12 +60,12 @@ async def simulate(context: Context):
         await context.message.reply(f"The requested beatmap was not found.")
         return
 
+    mods = Mods(args.get('mods', 0))
     mode = args.get('mode', 0)
-    mods = args.get('mods', 0)
 
     perf = Performance(lazer=False)
     beatmap = Beatmap(bytes=beatmap_file)
-    beatmap.convert(performance.convert_mode(mode), mods)
+    beatmap.convert(performance.convert_mode(mode), mods.value)
 
     functions = {
         'acc': perf.set_accuracy,
