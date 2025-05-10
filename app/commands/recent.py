@@ -4,7 +4,7 @@ from app.common.database.objects import DBScore
 from app.common.constants import Mods
 from app.objects import Context
 
-from titanic_pp_py import Calculator, Beatmap
+from rosu_pp_py import Performance, Beatmap
 from typing import Optional, Tuple
 
 from discord.ui import View, Button
@@ -123,22 +123,23 @@ def get_difficulty_info(score: DBScore) -> Tuple[float, float]:
         )
         return 0.0, 0.0
 
-    bm = Beatmap(bytes=beatmap_file)
     mods = Mods(score.mods)
+    bm = Beatmap(bytes=beatmap_file)
+    bm.convert(score.mode, mods.value)
 
     if Mods.Nightcore in mods and not Mods.DoubleTime in mods:
         # NC somehow only appears with DT enabled at the same time...?
         # https://github.com/ppy/osu-api/wiki#mods
         mods |= Mods.DoubleTime
 
-    calc = Calculator(
-        mode = score.mode,
-        mods = mods.value,
-        n_geki = score.nGeki,
-        n_katu = score.nKatu,
-        n300 = score.n300,
-        n100 = score.n100,
-        n50 = score.n50
+    calc = Performance(
+        mode=score.mode,
+        mods=mods.value,
+        n_geki=score.nGeki,
+        n_katu=score.nKatu,
+        n300=score.n300,
+        n100=score.n100,
+        n50=score.n50
     )
 
     if not (result := calc.performance(bm)):

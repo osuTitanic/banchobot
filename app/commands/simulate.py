@@ -1,5 +1,5 @@
 
-from titanic_pp_py import Calculator, Beatmap
+from rosu_pp_py import Performance, Beatmap
 from app.common.constants import Mods
 from app.objects import Context
 
@@ -26,14 +26,14 @@ async def simulate(context: Context):
             await context.message.reply(f"Arguments should start with \"-\"!")
             return
 
-        argument_name = msg[index][1:]
+        argument_name = msg[index][1:].strip('-')
 
         if argument_name not in possible_args:
             await context.message.reply(f"Unknown argument {msg[index]}! \nList of available arguments: {', '.join(possible_args)}")
             return
 
         if argument_name == "mods":
-            args['mods'] = Mods.from_string(msg[index+1])
+            args['mods'] = Mods.from_string(msg[index+1]).value
             continue
 
         elif argument_name == "acc":
@@ -52,35 +52,32 @@ async def simulate(context: Context):
         args[msg[index][1:]] = int(msg[index+1])
 
     if not 'id' in args:
-        await context.message.reply(f"Provide beatmap id!")
+        await context.message.reply(f"Please provide a valid beatmap id!")
         return
 
     if not (beatmap_file := app.session.storage.get_beatmap(args['id'])):
-        await context.message.reply(f"Can't find beatmap!")
+        await context.message.reply(f"The requested beatmap was not found.")
         return
 
-    calc = Calculator(
-        mode=args['mode']
-        if 'mode' in args else 0
-    )
+    perf = Performance(lazer=False)
+    beatmap = Beatmap(bytes=beatmap_file)
+    beatmap.convert(args.get('mode', 0), args.get('mods', 0))
 
     functions = {
-        'acc': calc.set_acc,
-        'mods': calc.set_mods,
-        'combo': calc.set_combo,
-        'n300': calc.set_n300,
-        'n100': calc.set_n100,
-        'n50': calc.set_n50,
-        'katu': calc.set_n_katu,
-        'geki': calc.set_n_geki,
-        'miss': calc.set_n_misses
+        'acc': perf.set_accuracy,
+        'mods': perf.set_mods,
+        'combo': perf.set_combo,
+        'n300': perf.set_n300,
+        'n100': perf.set_n100,
+        'n50': perf.set_n50,
+        'katu': perf.set_n_katu,
+        'geki': perf.set_n_geki,
+        'miss': perf.set_misses
     }
 
     for key, value in args.items():
         if key in functions:
             functions[key](value)
 
-    bm = Beatmap(bytes=beatmap_file)
-
-    result = calc.performance(bm)
+    result = perf.performance(beatmap)
     await context.message.reply(f"PP: {result.pp:.2f}")

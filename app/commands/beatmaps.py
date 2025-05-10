@@ -6,7 +6,7 @@ from app.common.webhooks import Embed as WebhookEmbed, Image, Author
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.constants import DatabaseStatus, Mods
 
-from titanic_pp_py import Calculator, Beatmap
+from rosu_pp_py import Performance, Beatmap
 from datetime import datetime, timedelta
 from app.objects import Context
 from discord import Embed
@@ -242,11 +242,12 @@ async def beatmap_info(context: Context):
 
             if (beatmap_file := app.session.storage.get_beatmap(beatmap.id)):
                 bm = Beatmap(bytes=beatmap_file)
+                bm.convert(beatmap.mode)
                 pp_info += "PP: "
 
                 for combo_name, mod_value in mods_vn.items():
-                    calc = Calculator(mods=mod_value)
-                    result = calc.performance(bm)
+                    perf = Performance(mods=mod_value)
+                    result = perf.calculate(bm)
                     pp_info += f"{combo_name}: {result.pp:.0f} | "
 
                 pp_info = pp_info[:-2]
@@ -255,8 +256,8 @@ async def beatmap_info(context: Context):
                     pp_info += "\nPP: "
 
                     for combo_name, mod_value in mods_rx.items():
-                        calc = Calculator(mods=mod_value)
-                        result = calc.performance(bm)
+                        perf = Performance(mods=mod_value)
+                        result = perf.calculate(bm)
                         pp_info += f"{combo_name}: {result.pp:.0f} | "
 
                     pp_info = pp_info[:-2]
