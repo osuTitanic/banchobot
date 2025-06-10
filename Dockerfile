@@ -20,4 +20,7 @@ RUN pip install -r requirements.txt
 # Copy source code
 COPY . .
 
+# Disable output buffering
+ENV PYTHONUNBUFFERED=1
+
 CMD ["python3", "main.py"]
