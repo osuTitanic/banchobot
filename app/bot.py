@@ -92,11 +92,18 @@ class BanchoBot(discord.Client):
             message_target = config.CHAT_WEBHOOK_CHANNELS[0]
             message_content = message.content.strip()
 
-            # Replace @ mentions with usernames
+            # Replace username mentions with usernames
             for mention in message.mentions:
                 message_content = message_content.replace(
                     mention.mention,
                     f'@{mention.name}'
+                )
+
+            # Replace role mentions with role names
+            for role in message.role_mentions:
+                message_content = message_content.replace(
+                    role.mention,
+                    f'@{role.name}'
                 )
 
             if message.attachments:
