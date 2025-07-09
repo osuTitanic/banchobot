@@ -88,6 +88,12 @@ class BanchoBot(discord.Client):
                     f'User {message.author} ({message.author.id}) tried to send a message '
                     f'in the #osu channel, but is silenced.'
                 )
+                
+            if target_user.restricted:
+                return app.session.logger.warning(
+                    f'User {message.author} ({message.author.id}) tried to send a message '
+                    f'in the #osu channel, but is restricted.'
+                )
 
             message_target = config.CHAT_WEBHOOK_CHANNELS[0]
             message_content = message.content.strip()
@@ -114,7 +120,7 @@ class BanchoBot(discord.Client):
 
             if not message_content:
                 return
-            
+
             if len(message_content) > 512:
                 message_content = message_content[:509] + '...'
 
