@@ -24,6 +24,9 @@ def setup() -> None:
     os.makedirs(f'{config.DATA_PATH}/replays', exist_ok=True)
     os.makedirs(f'{config.DATA_PATH}/avatars', exist_ok=True)
 
+def sanitize_response(message: str) -> str:
+    return message.replace('@', '@\u200b')
+
 def get_beatmap_filename(id: int) -> str:
     response = app.session.requests.head(f'https://old.ppy.sh/osu/{id}')
 

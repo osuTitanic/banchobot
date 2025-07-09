@@ -4,6 +4,7 @@ from app.common.helpers import performance
 from app.common.constants import Mods
 from app.objects import Context
 
+import utils
 import app
 
 @app.session.commands.register(["simulate", "pp"])
@@ -30,7 +31,8 @@ async def simulate(context: Context):
         argument_name = msg[index][1:].strip('-')
 
         if argument_name not in possible_args:
-            await context.message.reply(f"Unknown argument {msg[index]}! \nList of available arguments: {', '.join(possible_args)}")
+            message = f"Unknown argument {msg[index]}! \nList of available arguments: {', '.join(possible_args)}"
+            await context.message.reply(utils.sanitize_response(message))
             return
 
         if argument_name == "mods":
