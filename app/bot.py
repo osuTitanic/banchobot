@@ -110,7 +110,8 @@ class BanchoBot(discord.Client):
                 target_user.id,
                 target_user.name,
                 message_target,
-                message_content
+                message_content,
+                submit_to_webhook=False
             )
 
             messages.create(
