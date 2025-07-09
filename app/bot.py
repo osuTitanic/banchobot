@@ -92,11 +92,17 @@ class BanchoBot(discord.Client):
             message_target = config.CHAT_WEBHOOK_CHANNELS[0]
             message_content = message.content.strip()
 
+            # Replace @ mentions with usernames
+            for mention in message.mentions:
+                message_content = message_content.replace(
+                    mention.mention,
+                    mention.name
+                )
+
             if message.attachments:
                 message_content += (
                     f' ({len(message.attachments)}'
-                    f' attachment{"s" if len(message.attachments) > 1 else ""}'
-                    f' sent over discord)'
+                    f' attachment{"s" if len(message.attachments) > 1 else ""})'
                 )
 
             if not message_content:
