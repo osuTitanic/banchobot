@@ -123,6 +123,16 @@ class BanchoBot(discord.Client):
                     f':{emote_name}:'
                 )
 
+            # Replace markdown links with osu! style links
+            for match in re.finditer(MARKDOWN_LINK, message_content):
+                link_original_text = match.group(0)
+                link_text = match.group(1)
+                link_url = match.group(2)
+                message_content = message_content.replace(
+                    link_original_text,
+                    f'[{link_url} {link_text}]'
+                )
+
             # If message is replying to another message, include the reply target
             if message.reference:
                 message_content = (
