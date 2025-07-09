@@ -44,6 +44,10 @@ DOMAIN_NAME = os.environ.get('DOMAIN_NAME')
 OSU_CLIENT_ID = os.environ.get('OSU_CLIENT_ID')
 OSU_CLIENT_SECRET = os.environ.get('OSU_CLIENT_SECRET')
 
+CHAT_WEBHOOK_CHANNELS = os.environ.get('ALLOWED_WEBHOOK_CHANNELS', '#osu').split(',')
+CHAT_WEBHOOK_URL = os.environ.get('CHAT_WEBHOOK_URL')
+CHAT_CHANNEL_ID = os.environ.get('CHAT_CHANNEL_ID')
+
 APPROVED_MAP_REWARDS = eval(os.environ.get('APPROVED_MAP_REWARDS', 'False').capitalize())
 S3_ENABLED = eval(os.environ.get('ENABLE_S3', 'True').capitalize())
 DEBUG = eval(os.environ.get('DEBUG', 'False').capitalize())
