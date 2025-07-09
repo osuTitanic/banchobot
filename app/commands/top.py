@@ -7,6 +7,7 @@ from discord import Embed
 from discord import Color
 
 import config
+import utils
 import app
 
 @app.session.commands.register(["top"])
@@ -42,7 +43,8 @@ async def top(context: Context):
         )
 
         if not user_scores:
-            await context.message.reply(f"No scores found for user {user.name}.")
+            message = f"No scores found for user {user.name}."
+            await context.message.reply(utils.sanitize_response(message))
             return
 
         str_builder = ""
