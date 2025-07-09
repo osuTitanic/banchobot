@@ -1,5 +1,5 @@
 
-from app.common.database.repositories import users
+from app.common.database.repositories import users, messages
 from app.objects import Context
 
 import discord
@@ -69,35 +69,56 @@ class BanchoBot(discord.Client):
                     mention_author=True,
                     reference=message
                 )
-                
+
     def handle_bancho_chat(self, message: discord.Message) -> None:
-        target_user = users.fetch_by_discord_id(message.author.id)
-        
-        if not target_user:
-            return app.session.logger.warning(
-                f'User {message.author} ({message.author.id}) tried to send a message '
-                f'in the #osu channel, but is not registered in the database.'
+        with app.session.database.managed_session() as session:
+            target_user = users.fetch_by_discord_id(
+                message.author.id,
+                session=session
             )
 
-        message_content = message.content.strip()
+            if not target_user:
+                return app.session.logger.warning(
+                    f'User {message.author} ({message.author.id}) tried to send a message '
+                    f'in the #osu channel, but is not registered in the database.'
+                )
+                
+            if target_user.silence_end:
+                return app.session.logger.warning(
+                    f'User {message.author} ({message.author.id}) tried to send a message '
+                    f'in the #osu channel, but is silenced.'
+                )
 
-        if message.attachments:
-            message_content += (
-                f' ({len(message.attachments)}'
-                f' attachment{"s" if len(message.attachments) > 1 else ""}'
-                f' sent over discord)'
+            message_target = config.CHAT_WEBHOOK_CHANNELS[0]
+            message_content = message.content.strip()
+
+            if message.attachments:
+                message_content += (
+                    f' ({len(message.attachments)}'
+                    f' attachment{"s" if len(message.attachments) > 1 else ""}'
+                    f' sent over discord)'
+                )
+
+            if not message_content:
+                return
+            
+            if len(message_content) > 512:
+                message_content = message_content[:509] + '...'
+
+            app.session.events.submit(
+                'external_message',
+                target_user.id,
+                target_user.name,
+                message_target,
+                message_content
             )
 
-        if not message_content:
-            return
-
-        app.session.events.submit(
-            'external_message',
-            target_user.id,
-            target_user.name,
-            config.CHAT_WEBHOOK_CHANNELS[0],
-            message_content
-        )
+            messages.create(
+                target_user.name,
+                message_target,
+                message_content,
+                session=session
+            )
 
 intents = discord.Intents.default()
 intents.message_content = True
