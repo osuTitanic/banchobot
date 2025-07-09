@@ -96,7 +96,7 @@ class BanchoBot(discord.Client):
             for mention in message.mentions:
                 message_content = message_content.replace(
                     mention.mention,
-                    mention.name
+                    f'@{mention.name}'
                 )
 
             if message.attachments:
