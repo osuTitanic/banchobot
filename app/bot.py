@@ -1,4 +1,5 @@
 
+from app.common.constants.regexes import MARKDOWN_LINK, DISCORD_EMOTE
 from app.common.database.repositories import users, messages
 from app.objects import Context
 
@@ -6,6 +7,7 @@ import discord
 import config
 import shlex
 import app
+import re
 
 BEATMAP_URLS = ("https://osu.ppy.sh/b/", "https://osu.ppy.sh/beatmapsets/", "https://osu.ppy.sh/s/", f"https://{config.DOMAIN_NAME}/b/", f"https://{config.DOMAIN_NAME}/beatmapsets/", f"https://{config.DOMAIN_NAME}/s/")
 
@@ -110,6 +112,15 @@ class BanchoBot(discord.Client):
                 message_content = message_content.replace(
                     role.mention,
                     f'@{role.name}'
+                )
+
+            # Replace discord emotes with text representation
+            for match in re.finditer(DISCORD_EMOTE, message_content):
+                emote_text = match.group(0)
+                emote_name = match.group(1)
+                message_content = message_content.replace(
+                    emote_text,
+                    f':{emote_name}:'
                 )
 
             # If message is replying to another message, include the reply target
