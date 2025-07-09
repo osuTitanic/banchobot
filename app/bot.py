@@ -112,6 +112,12 @@ class BanchoBot(discord.Client):
                     f'@{role.name}'
                 )
 
+            # If message is replying to another message, include the reply target
+            if message.reference:
+                message_content = (
+                    f'(Reply): {message_content}'
+                )
+
             if message.attachments:
                 message_content += (
                     f' ({len(message.attachments)}'
