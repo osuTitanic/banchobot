@@ -1,8 +1,6 @@
 
 from app.common.database.repositories import users
-from app.commands.beatmaps import beatmap_info
 from app.objects import Context
-from discord.utils import get
 
 import discord
 import config
@@ -20,6 +18,9 @@ class BanchoBot(discord.Client):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
+
+        if config.CHAT_CHANNEL_ID and message.channel.id == config.CHAT_CHANNEL_ID:
+            return self.handle_bancho_chat(message)
 
         if not message.content.startswith(config.BOT_PREFIX):
             return
@@ -68,6 +69,35 @@ class BanchoBot(discord.Client):
                     mention_author=True,
                     reference=message
                 )
+                
+    def handle_bancho_chat(self, message: discord.Message) -> None:
+        target_user = users.fetch_by_discord_id(message.author.id)
+        
+        if not target_user:
+            return app.session.logger.warning(
+                f'User {message.author} ({message.author.id}) tried to send a message '
+                f'in the #osu channel, but is not registered in the database.'
+            )
+
+        message_content = message.content.strip()
+
+        if message.attachments:
+            message_content += (
+                f' ({len(message.attachments)}'
+                f' attachment{"s" if len(message.attachments) > 1 else ""}'
+                f' sent over discord)'
+            )
+
+        if not message_content:
+            return
+
+        app.session.events.submit(
+            'external_message',
+            target_user.id,
+            target_user.name,
+            config.CHAT_WEBHOOK_CHANNELS[0],
+            message_content
+        )
 
 intents = discord.Intents.default()
 intents.message_content = True
