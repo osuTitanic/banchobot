@@ -1,4 +1,5 @@
 
+from .common.helpers.filter import ChatFilter
 from .common.cache.events import EventQueue
 from .common.database import Postgres
 from .common.storage import Storage
@@ -30,11 +31,11 @@ events = EventQueue(
 )
 
 logger = logging.getLogger('banchobot')
+bot: Optional[Client] = None
 
 commands = CommandManager()
+filters = ChatFilter()
 storage = Storage()
-
-bot: Optional[Client] = None
 
 requests = Session()
 requests.headers = {

@@ -1,6 +1,7 @@
 
 from app.common.constants.regexes import MARKDOWN_LINK, DISCORD_EMOTE
 from app.common.database.repositories import users, messages
+from app.common.helpers import infringements
 from app.objects import Context
 
 import discord
@@ -13,9 +14,8 @@ BEATMAP_URLS = ("https://osu.ppy.sh/b/", "https://osu.ppy.sh/beatmapsets/", "htt
 
 class BanchoBot(discord.Client):
     async def on_ready(self):
-        app.session.logger.info(
-            f'Logged in as {self.user}.'
-        )
+        app.session.logger.info(f'Logged in as {self.user}.')
+        app.session.filters.populate()
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:
@@ -99,6 +99,17 @@ class BanchoBot(discord.Client):
 
             message_target = config.CHAT_WEBHOOK_CHANNELS[0]
             message_content = message.content.strip()
+            
+            # Apply chat filters
+            message_content, timeout_duration = app.session.filters.apply(message_content)
+            
+            if timeout_duration is not None:
+                return infringements.silence_user(
+                    target_user,
+                    timeout_duration,
+                    f"Inappropriate discussion in #osu",
+                    session=session
+                )
 
             # Replace username mentions with usernames
             for mention in message.mentions:
