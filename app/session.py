@@ -3,7 +3,6 @@ from .common.helpers.filter import ChatFilter
 from .common.cache.events import EventQueue
 from .common.database import Postgres
 from .common.storage import Storage
-from .manager import CommandManager
 
 from requests import Session
 from typing import Optional
@@ -33,10 +32,8 @@ events = EventQueue(
 logger = logging.getLogger('banchobot')
 bot: Optional[Client] = None
 
-commands = CommandManager()
 filters = ChatFilter()
 storage = Storage()
-
 requests = Session()
 requests.headers = {
     'User-Agent': f'osuTitanic/banchobot ({config.DOMAIN_NAME})'

@@ -3,7 +3,6 @@ from app.common.logging import Console, File
 
 import logging
 import config
-import utils
 import app
 
 logging.basicConfig(
@@ -17,7 +16,6 @@ def main():
         logging.warning("BanchoBot is disabled, exiting...")
         exit(0)
 
-    utils.setup()
     app.bot.run()
 
 if __name__ == "__main__":
