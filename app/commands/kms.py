@@ -30,6 +30,7 @@ class NeverKillYourself(BaseCog):
             reference=message
         )
         self.last_event = time.time()
+        self.logger.info(f'"{message.author.name}" should never kill themselves')
 
 async def setup(bot: Bot):
     await bot.add_cog(NeverKillYourself())
