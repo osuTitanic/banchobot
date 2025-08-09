@@ -4,6 +4,7 @@ from .common.cache.events import EventQueue
 from .common.database import Postgres
 from .common.storage import Storage
 
+from redis.asyncio import Redis as RedisAsync
 from requests import Session
 from typing import Optional
 from discord import Client
@@ -22,6 +23,11 @@ database = Postgres(
 redis = Redis(
     config.REDIS_HOST,
     config.REDIS_PORT
+)
+
+redis_async = RedisAsync(
+    host=config.REDIS_HOST,
+    port=config.REDIS_PORT
 )
 
 events = EventQueue(
