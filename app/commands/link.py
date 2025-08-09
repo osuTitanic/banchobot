@@ -1,6 +1,7 @@
 
-from discord.ext.commands import Cog, Bot, command
+from discord.ext.commands import Cog, Bot
 from discord.ui import Modal, TextInput
+from discord.ext import commands
 from discord import app_commands
 
 from app.common.database.objects import DBUser
@@ -17,35 +18,34 @@ class AccountLinking(BaseCog):
         super().__init__()
         self.member_role = discord.utils.get(self.guild.roles, name="Member")
 
-    @app_commands.command(name="link", description="Link your account to Titanic!")
-    @app_commands.describe(username="Your Titanic! username")
-    async def link_account(self, interaction: discord.Interaction, username: str) -> None:
-        if existing_user := await self.resolve_user(interaction.user.id):
-            return await interaction.response.send_message(
+    @commands.hybrid_command("link", description="Link your account to Titanic!", hidden=True)
+    async def link_account(self, ctx: commands.Context, username: str) -> None:
+        if existing_user := await self.resolve_user(ctx.author.id):
+            return await ctx.send(
                 "Your account is already linked to Titanic! "
                 "Use /unlink to unlink your current account.",
                 ephemeral=True
             )
 
         if not (target_user := await self.resolve_user_by_name(username)):
-            return await interaction.response.send_message(
+            return await ctx.send(
                 "No user found with that name.",
                 ephemeral=True
             )
 
         if target_user.discord_id:
-            return await interaction.response.send_message(
+            return await ctx.send(
                 "This user is already linked to another Discord account.",
                 ephemeral=True
             )
 
         if not status.exists(target_user.id):
-            return await interaction.response.send_message(
+            return await ctx.send(
                 "Please log into the game and try again!",
                 ephemeral=True
             )
 
-        self.logger.info(f'[{interaction.user}] -> Starting linking process...')
+        self.logger.info(f'[{ctx.author}] -> Starting linking process...')
 
         # Generate random 6-letter code which will be sent over DMs
         code = ''.join(random.choices(string.ascii_lowercase, k=6))
@@ -61,16 +61,16 @@ class AccountLinking(BaseCog):
         )
         embed.set_footer(text="This message is only visible to you.")
 
-        await interaction.response.send_message(
+        await ctx.send(
             view=LinkingView(code, target_user, self),
             embed=embed,
             ephemeral=True
         )
 
-    @app_commands.command(name="unlink", description="Unlink your account from Titanic!")
-    async def unlink_account(self, interaction: discord.Interaction) -> None:
-        if not (linked_user := await self.resolve_user(interaction.user.id)):
-            return await interaction.response.send_message(
+    @commands.hybrid_command("unlink", description="Unlink your account from Titanic!", hidden=True)
+    async def unlink_account(self, ctx: commands.Context) -> None:
+        if not (linked_user := await self.resolve_user(ctx.author.id)):
+            return await ctx.send(
                 "Your account is not linked to Titanic!",
                 ephemeral=True
             )
@@ -79,8 +79,7 @@ class AccountLinking(BaseCog):
             linked_user.id,
             {"discord_id": None}
         )
-
-        await interaction.response.send_message(
+        await ctx.send(
             "You have successfully unlinked your account from Titanic!",
             ephemeral=True
         )
