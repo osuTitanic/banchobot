@@ -22,5 +22,5 @@ def run():
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
-    app.session.bot = BanchoBot(config.BOT_PREFIX, intents=intents)
+    app.session.bot = BanchoBot(config.BOT_PREFIX, intents=intents, help_command=None)
     app.session.bot.run(config.BOT_TOKEN, log_handler=None)
