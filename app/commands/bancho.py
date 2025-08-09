@@ -129,12 +129,6 @@ class BanchoChatBridge(BaseCog):
             user, duration, reason
         )
 
-    async def submit_event(self, name: str, *args) -> None:
-        return await self.run_async(
-            self.events.submit,
-            name, *args
-        )
-
     async def create_message(self, username: str, target: str, content: str) -> None:
         return await self.run_async(
             messages.create,

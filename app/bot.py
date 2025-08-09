@@ -11,10 +11,12 @@ class BanchoBot(Bot):
         app.session.logger.info(f'Logged in as {self.user}.')
         app.session.filters.populate()
         await self.load_cogs()
-        
+
     async def load_cogs(self):
         await self.load_extension("app.commands.kms")
+        await self.load_extension("app.commands.link")
         await self.load_extension("app.commands.bancho")
+        await self.tree.sync()
 
 def run():
     intents = discord.Intents.default()
