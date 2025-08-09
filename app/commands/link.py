@@ -12,8 +12,8 @@ import app
 @app.session.commands.register(['link'])
 async def create_account(context: Context):
     """<username> - Link your account to discord"""
-    author = context.message.author
-
+    author = context.message.author # Hello
+    
     if users.fetch_by_discord_id(author.id):
         await context.message.channel.send(
             'You already have an account linked to your discord profile.',
