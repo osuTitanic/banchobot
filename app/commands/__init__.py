@@ -1,0 +1,2 @@
+
+from .kms import NeverKillYourself

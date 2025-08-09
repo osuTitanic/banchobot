@@ -5,9 +5,9 @@ from .common.database import Postgres
 from .common.storage import Storage
 
 from redis.asyncio import Redis as RedisAsync
+from discord.ext.commands import Bot
 from requests import Session
 from typing import Optional
-from discord import Client
 from redis import Redis
 
 import logging
@@ -36,7 +36,7 @@ events = EventQueue(
 )
 
 logger = logging.getLogger('banchobot')
-bot: Optional[Client] = None
+bot: Optional[Bot] = None
 
 filters = ChatFilter()
 storage = Storage()
