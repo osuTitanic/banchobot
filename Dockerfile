@@ -31,4 +31,5 @@ COPY . .
 ENV PYTHONDONTWRITEBYTECODE=1
 RUN python -m compileall -q app
 
+STOPSIGNAL SIGINT
 CMD ["python3", "main.py"]
