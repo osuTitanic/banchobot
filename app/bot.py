@@ -16,6 +16,7 @@ class BanchoBot(Bot):
         await self.load_extension("app.commands.kms")
         await self.load_extension("app.commands.link")
         await self.load_extension("app.commands.bancho")
+        await self.load_extension("app.commands.errors")
         await self.tree.sync()
 
 def run():
