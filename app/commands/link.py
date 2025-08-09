@@ -149,7 +149,7 @@ class AccountLinkingModal(Modal):
             ephemeral=True
         )
         self.cog.logger.info(
-            f'[{interaction.user}] -> Linked account: {self.target_user.name}'
+            f'[{interaction.user}] -> Account was linked to: {self.target_user.name}'
         )
 
         # Add member role to let the user access #osu chat
