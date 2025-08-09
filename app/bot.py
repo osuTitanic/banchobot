@@ -14,6 +14,7 @@ class BanchoBot(Bot):
         
     async def load_cogs(self):
         await self.load_extension("app.commands.kms")
+        await self.load_extension("app.commands.bancho")
 
 def run():
     intents = discord.Intents.default()

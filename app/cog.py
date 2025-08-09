@@ -14,7 +14,9 @@ class BaseCog(Cog):
         self.bot = session.bot
         self.redis = session.redis_async
         self.logger = session.logger
+        self.events = session.events
         self.storage = session.storage
+        self.filters = session.filters
         self.database = session.database
         self.requests = session.requests
 
