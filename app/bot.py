@@ -1,6 +1,6 @@
 
 from discord.ext.commands import *
-from app.commands import *
+from app.extensions import *
 
 import discord
 import config
@@ -13,10 +13,10 @@ class BanchoBot(Bot):
         await self.load_cogs()
 
     async def load_cogs(self):
-        await self.load_extension("app.commands.kms")
-        await self.load_extension("app.commands.link")
-        await self.load_extension("app.commands.bancho")
-        await self.load_extension("app.commands.errors")
+        await self.load_extension("app.extensions.kms")
+        await self.load_extension("app.extensions.link")
+        await self.load_extension("app.extensions.bridge")
+        await self.load_extension("app.extensions.errors")
         await self.tree.sync()
 
 def run():
