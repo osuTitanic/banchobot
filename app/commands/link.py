@@ -46,7 +46,7 @@ class AccountLinking(BaseCog):
             )
 
         self.logger.info(f'[{interaction.user}] -> Starting linking process...')
-        
+
         # Generate random 6-letter code which will be sent over DMs
         code = ''.join(random.choices(string.ascii_lowercase, k=6))
         await self.submit_event('link', target_user.id, code)
@@ -151,6 +151,9 @@ class AccountLinkingModal(Modal):
         self.cog.logger.info(
             f'[{interaction.user}] -> Linked account: {self.target_user.name}'
         )
+
+        # Add member role to let the user access #osu chat
+        await interaction.user.add_roles(self.cog.member_role)
 
 async def setup(bot: Bot):
     await bot.add_cog(AccountLinking())
