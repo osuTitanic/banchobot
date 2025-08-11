@@ -25,6 +25,7 @@ COPY --from=builder /usr/local /usr/local
 ENV PYTHONUNBUFFERED=1
 
 # Copy source code
+WORKDIR /bot
 COPY . .
 
 # Generate __pycache__ directories
