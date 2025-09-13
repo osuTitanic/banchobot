@@ -1,13 +1,11 @@
 
 from app.common.database.repositories import scores
 from app.common.database.objects import DBScore
+from app.extensions.types import *
 from discord.ext.commands import Bot
 from discord.ext import commands
-from typing import List, Literal
 from app.cog import BaseCog
-
-Modes = {"standard": 0, "taiko": 1, "catch": 2, "mania": 3}
-ModeType = Literal["standard", "taiko", "catch", "mania"]
+from typing import List
 
 class TopScores(BaseCog):
     @commands.hybrid_command("top", description="Display the top plays of you or another player", aliases=["scores", "best"])
