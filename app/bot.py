@@ -17,6 +17,7 @@ class BanchoBot(Bot):
         await self.load_extension("app.extensions.bridge")
         await self.load_extension("app.extensions.link")
         await self.load_extension("app.extensions.fun")
+        await self.load_extension("app.extensions.recent")
         await self.tree.sync()
 
 def run():
