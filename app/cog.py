@@ -1,12 +1,13 @@
 
 from discord.ext.commands import Cog
-from sqlalchemy.orm import Session
+from config import DOMAIN_NAME
 from typing import Callable
 
-from app.common.database.objects import DBUser
+from app.common.database.objects import DBUser, DBBeatmapset
 from app.common.database import users
 from app import session
 
+import hashlib
 import asyncio
 import app
 
@@ -25,6 +26,19 @@ class BaseCog(Cog):
     @staticmethod
     async def run_async(func: Callable, *args):
         return await asyncio.get_event_loop().run_in_executor(None, func, *args)
+
+    @staticmethod
+    def avatar_url(user: DBUser) -> str:
+        url = f"http://osu.{DOMAIN_NAME}/a/{user.id}"
+        url += f"?c={user.avatar_hash}" if user.avatar_hash else ""
+        return url
+
+    @staticmethod
+    def thumbnail_url(beatmapset: DBBeatmapset) -> str:
+        update_hash = hashlib.md5(f'{beatmapset.last_update}'.encode()).hexdigest()
+        url = f"http://osu.{DOMAIN_NAME}/mt/{beatmapset.id}"
+        url += f"?c={update_hash}"
+        return url
 
     async def resolve_user(self, discord_id: int) -> DBUser | None:
         return await self.run_async(
