@@ -26,22 +26,22 @@ class BaseCog(Cog):
     async def run_async(func: Callable, *args):
         return await asyncio.get_event_loop().run_in_executor(None, func, *args)
 
-    async def resolve_user(self, discord_id: int, session: Session | None = None) -> DBUser | None:
+    async def resolve_user(self, discord_id: int) -> DBUser | None:
         return await self.run_async(
             users.fetch_by_discord_id,
-            discord_id, session
+            discord_id
         )
 
-    async def resolve_user_by_name(self, username: str, session: Session | None = None) -> DBUser | None:
+    async def resolve_user_by_name(self, username: str) -> DBUser | None:
         return await self.run_async(
             users.fetch_by_name_extended,
-            username, session
+            username
         )
 
-    async def update_user(self, user_id: int, updates: dict, session: Session | None = None) -> int:
+    async def update_user(self, user_id: int, updates: dict) -> int:
         return await self.run_async(
             users.update,
-            user_id, updates, session
+            user_id, updates
         )
 
     async def submit_event(self, name: str, *args) -> None:
