@@ -11,7 +11,6 @@ from app.cog import BaseCog
 import discord
 import random
 import string
-import time
 
 class AccountLinking(BaseCog):
     def __init__(self) -> None:
