@@ -1,5 +1,6 @@
 
 from discord.ext.commands import Cog
+from sqlalchemy.orm import Session
 from typing import Callable
 
 from app.common.database.objects import DBUser
@@ -25,22 +26,22 @@ class BaseCog(Cog):
     async def run_async(func: Callable, *args):
         return await asyncio.get_event_loop().run_in_executor(None, func, *args)
 
-    async def resolve_user(self, discord_id: int) -> DBUser | None:
+    async def resolve_user(self, discord_id: int, session: Session | None = None) -> DBUser | None:
         return await self.run_async(
             users.fetch_by_discord_id,
-            discord_id
+            discord_id, session
         )
 
-    async def resolve_user_by_name(self, username: str) -> DBUser | None:
+    async def resolve_user_by_name(self, username: str, session: Session | None = None) -> DBUser | None:
         return await self.run_async(
             users.fetch_by_name_extended,
-            username
+            username, session
         )
-        
-    async def update_user(self, user_id: int, updates: dict) -> int:
+
+    async def update_user(self, user_id: int, updates: dict, session: Session | None = None) -> int:
         return await self.run_async(
             users.update,
-            user_id, updates
+            user_id, updates, session
         )
 
     async def submit_event(self, name: str, *args) -> None:

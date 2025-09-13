@@ -4,3 +4,4 @@ from .errors import ErrorHandler
 from .link import AccountLinking
 from .fun import NeverKillYourself
 from .recent import RecentScore
+from .profile import Profile
