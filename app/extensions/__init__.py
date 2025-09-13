@@ -6,3 +6,5 @@ from .fun import NeverKillYourself
 from .recent import RecentScore
 from .profile import Profile
 from .top import TopScores
+from .simulate import SimulateScore
+from .search import SearchBeatmapset

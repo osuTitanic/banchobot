@@ -21,6 +21,7 @@ class BanchoBot(Bot):
         await self.load_extension("app.extensions.profile")
         await self.load_extension("app.extensions.top")
         await self.load_extension("app.extensions.simulate")
+        await self.load_extension("app.extensions.search")
         await self.tree.sync()
 
 def run():

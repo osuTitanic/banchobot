@@ -1,5 +1,5 @@
 
-from rosu_pp_py import Performance, Beatmap, PerformanceAttributes, DifficultyAttributes
+from rosu_pp_py import Performance, Beatmap, PerformanceAttributes
 from discord import app_commands, Interaction, Embed
 from discord.ext.commands import Bot
 from config import DOMAIN_NAME
