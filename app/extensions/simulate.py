@@ -1,7 +1,8 @@
 
-from rosu_pp_py import Performance, Beatmap
-from discord import app_commands, Interaction
+from rosu_pp_py import Performance, Beatmap, PerformanceAttributes, DifficultyAttributes
+from discord import app_commands, Interaction, Embed
 from discord.ext.commands import Bot
+from config import DOMAIN_NAME
 
 from app.common.database.repositories import beatmaps
 from app.common.database.objects import DBBeatmap
@@ -50,13 +51,33 @@ class SimulateScore(BaseCog):
             calculator.set_combo(combo)
 
         result = calculator.calculate(beatmap_object)
-        await interaction.response.send_message(f"PP: {result.pp:.2f}")
+        embed = self.create_embed(result, beatmap, mods)
+        await interaction.response.send_message(embed=embed)
 
     async def resolve_beatmap(self, beatmap_id: int) -> DBBeatmap | None:
         return await self.run_async(
             beatmaps.fetch_by_id,
             beatmap_id
         )
+        
+    def create_embed(
+        self,
+        result: PerformanceAttributes,
+        beatmap: DBBeatmap,
+        mods: str
+    ) -> Embed:
+        embed = Embed(
+            title=beatmap.full_name,
+            url=f"http://osu.{DOMAIN_NAME}/b/{beatmap.id}",
+            description=(
+                f"**PP:** {result.pp:.2f}\n"
+                f"**Stars:** {result.difficulty.stars:.2f}★\n" +
+                (f"**Mods:** +{mods}" if mods != "NM" else "")
+            )
+        )
+        embed.set_footer(text="Simulated Score")
+        embed.set_thumbnail(url=self.thumbnail_url(beatmap.beatmapset))
+        return embed
 
 async def setup(bot: Bot):
     await bot.add_cog(SimulateScore())
