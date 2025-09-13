@@ -20,6 +20,7 @@ class BanchoBot(Bot):
         await self.load_extension("app.extensions.recent")
         await self.load_extension("app.extensions.profile")
         await self.load_extension("app.extensions.top")
+        await self.load_extension("app.extensions.simulate")
         await self.tree.sync()
 
 def run():
