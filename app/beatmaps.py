@@ -1,5 +1,5 @@
 
-from app.common.database.repositories import beatmaps, beatmapsets
+from app.common.database.repositories import beatmaps, beatmapsets, wrapper
 from app.common.database.objects import DBBeatmapset, DBBeatmap
 from typing import Dict, Tuple, Union, List
 from sqlalchemy.orm import Session
@@ -90,7 +90,8 @@ def serialize_section(section: str, items: dict | list) -> bytes:
     result += b'\r\n'
     return result
 
-def store_ossapi_beatmapset(set: Beatmapset, session: Session) -> DBBeatmapset:
+@wrapper.session_wrapper
+def store_ossapi_beatmapset(set: Beatmapset, session: Session = ...) -> DBBeatmapset:
     """Convert an osu! api beatmapset to a local beatmapset and store it in the database"""
     database_set = beatmapsets.create(
         set.id,
@@ -149,6 +150,7 @@ def fetch_osz_filesizes(set_id: int) -> Tuple[int, int]:
 
     return filesize, filesize_novideo
 
+@wrapper.session_wrapper
 def fix_beatmap_files(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
     """Update the .osu files of a beatmapset to round OD/AR/HP/CS values"""
     updated_beatmaps = list()
@@ -161,6 +163,11 @@ def fix_beatmap_files(beatmapset: DBBeatmapset, session: Session = ...) -> List[
 
         version, beatmap_dict = deserialize(beatmap_file.decode())
         beatmap_updates = {}
+        
+        if 'Difficulty' not in beatmap_dict:
+            # Invalid beatmap file somehow...
+            app.session.logger.warning(f"Invalid beatmap file for '{beatmap.id}'")
+            continue
 
         difficulty_attributes = {
             'OverallDifficulty': 'od',
