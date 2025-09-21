@@ -31,10 +31,9 @@ class Moderation(BaseCog):
             )
 
         # Let bancho handle the restriction
-        self.events.submit(
+        await self.submit_event(
             'restrict',
-            user_id=user.id,
-            reason=reason
+            user.id, reason
         )
 
         await interaction.response.send_message(
@@ -62,10 +61,9 @@ class Moderation(BaseCog):
             )
 
         # Let bancho handle the unrestriction
-        self.events.submit(
+        await self.submit_event(
             'unrestrict',
-            user_id=user.id,
-            restore_scores=restore_scores
+            user.id, restore_scores
         )
 
         await interaction.response.send_message(
