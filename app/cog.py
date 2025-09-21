@@ -1,4 +1,5 @@
 
+from ossapi.ossapiv2_async import OssapiAsync
 from discord.ext.commands import Cog
 from config import DOMAIN_NAME
 from typing import Callable
@@ -9,7 +10,7 @@ from app import session
 
 import hashlib
 import asyncio
-import app
+import config
 
 class BaseCog(Cog):
     def __init__(self) -> None:
@@ -22,6 +23,14 @@ class BaseCog(Cog):
         self.filters = session.filters
         self.database = session.database
         self.requests = session.requests
+        
+        if not config.OSU_CLIENT_ID or not config.OSU_CLIENT_SECRET:
+            return
+
+        self.ossapi = OssapiAsync(
+            config.OSU_CLIENT_ID,
+            config.OSU_CLIENT_SECRET
+        )
 
     @staticmethod
     async def run_async(func: Callable, *args):
