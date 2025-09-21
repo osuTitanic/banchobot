@@ -35,6 +35,8 @@ class SimulateScore(BaseCog):
                 ephemeral=True
             )
 
+        await interaction.response.defer()
+
         target_mods = Mods.from_string(mods).value
         target_mode = Modes.get(mode, beatmap.mode)
 
@@ -52,7 +54,7 @@ class SimulateScore(BaseCog):
 
         result = calculator.calculate(beatmap_object)
         embed = self.create_embed(result, beatmap, mods)
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     async def resolve_beatmap(self, beatmap_id: int) -> DBBeatmap | None:
         return await self.run_async(
