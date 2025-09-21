@@ -1,6 +1,14 @@
 
-from typing import Dict, Tuple, Union
-from io import BytesIO
+from app.common.database.repositories import beatmaps, beatmapsets
+from app.common.database.objects import DBBeatmapset, DBBeatmap
+from typing import Dict, Tuple, Union, List
+from sqlalchemy.orm import Session
+from ossapi import Beatmapset
+
+import hashlib
+import app
+import re
+import io
 
 def deserialize(content: str) -> Tuple[int, Dict[str, dict]]:
     """Parse a beatmap file into a dictionary"""
@@ -49,7 +57,7 @@ def deserialize(content: str) -> Tuple[int, Dict[str, dict]]:
 
 def serialize(beatmap_dict: Dict[str, dict], osu_file_version: int) -> bytes:
     """Create a beatmap file from a beatmap dictionary"""
-    stream = BytesIO()
+    stream = io.BytesIO()
 
     # Write beatmap file version
     stream.write(
@@ -81,6 +89,122 @@ def serialize_section(section: str, items: dict | list) -> bytes:
 
     result += b'\r\n'
     return result
+
+def store_ossapi_beatmapset(set: Beatmapset, session: Session) -> DBBeatmapset:
+    """Convert an osu! api beatmapset to a local beatmapset and store it in the database"""
+    database_set = beatmapsets.create(
+        set.id,
+        set.title, set.title_unicode,
+        set.artist, set.artist_unicode,
+        set.creator, set.source,
+        set.tags, set.description['description'],
+        set.status.value,
+        set.video, set.storyboard,
+        set.language['id'], set.genre['id'],
+        osz_filesize=0,
+        osz_filesize_novideo=0,
+        available=(not set.availability.download_disabled),
+        submit_date=set.submitted_date,
+        approved_date=set.ranked_date,
+        last_update=set.last_updated,
+        session=session
+    )
+
+    for beatmap in set.beatmaps:
+        beatmap = beatmaps.create(
+            beatmap.id, beatmap.beatmapset_id,
+            beatmap.mode_int, beatmap.checksum,
+            beatmap.status.value, beatmap.version,
+            resolve_beatmap_filename(beatmap.id),
+            beatmap.total_length, beatmap.max_combo,
+            beatmap.bpm, beatmap.cs,
+            beatmap.ar, beatmap.accuracy,
+            beatmap.drain, beatmap.difficulty_rating,
+            set.submitted_date, beatmap.last_updated,
+            session=session
+        )
+        database_set.beatmaps.append(beatmap)
+
+    return database_set
+
+def resolve_beatmap_filename(id: int) -> str:
+    """Fetch the filename of a beatmap"""
+    response = app.session.requests.head(f'https://osu.ppy.sh/osu/{id}')
+    response.raise_for_status()
+
+    if not (cd := response.headers.get('content-disposition')):
+        raise ValueError('No content-disposition header found')
+
+    return re.findall("filename=(.+)", cd)[0].strip('"')
+
+def fetch_osz_filesizes(set_id: int) -> Tuple[int, int]:
+    """Fetch the filesize of a beatmapset's .osz file from a mirror"""
+    filesize, filesize_novideo = 0, 0
+
+    if (response := app.session.storage.api.osz(set_id, no_video=False)):
+        filesize = int(response.headers.get('Content-Length', default=0))
+
+    if (response := app.session.storage.api.osz(set_id, no_video=True)):
+        filesize_novideo = int(response.headers.get('Content-Length', default=0))
+
+    return filesize, filesize_novideo
+
+def fix_beatmap_files(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
+    """Update the .osu files of a beatmapset to round OD/AR/HP/CS values"""
+    updated_beatmaps = list()
+
+    for beatmap in beatmapset.beatmaps:
+        beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+        if not beatmap_file:
+            continue
+
+        version, beatmap_dict = deserialize(beatmap_file.decode())
+        beatmap_updates = {}
+
+        difficulty_attributes = {
+            'OverallDifficulty': 'od',
+            'ApproachRate': 'ar',
+            'HPDrainRate': 'hp',
+            'CircleSize': 'cs'
+        }
+
+        for key, short_key in difficulty_attributes.items():
+            if key not in beatmap_dict['Difficulty']:
+                continue
+
+            value = beatmap_dict['Difficulty'][key]
+
+            if isinstance(value, int):
+                continue
+
+            # Update value
+            beatmap_updates[short_key] = round(value) # Database
+            beatmap_dict['Difficulty'][key] = round(value) # File
+
+        if not beatmap_updates:
+            continue
+
+        # Get new file
+        content = serialize(beatmap_dict, version)
+
+        # Upload to storage
+        app.session.storage.upload_beatmap_file(beatmap.id, content)
+
+        # Update beatmap hash
+        beatmap_hash = hashlib.md5(content).hexdigest()
+        beatmap_updates['md5'] = beatmap_hash
+
+        # Update database
+        beatmaps.update(
+            beatmap.id,
+            beatmap_updates,
+            session=session
+        )
+
+        updated_beatmaps.append(beatmap)
+
+    return updated_beatmaps
 
 def parse_number(value: str) -> int | float:
     for cast in (int, float):
