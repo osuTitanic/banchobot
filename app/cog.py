@@ -45,10 +45,28 @@ class BaseCog(Cog):
             users.fetch_by_discord_id,
             discord_id
         )
+        
+    async def resolve_user_by_id(self, user_id: int) -> DBUser | None:
+        return await self.run_async(
+            users.fetch_by_id,
+            user_id
+        )
 
     async def resolve_user_by_name(self, username: str) -> DBUser | None:
         return await self.run_async(
             users.fetch_by_name_extended,
+            username
+        )
+
+    async def resolve_user_by_name_case_insensitive(self, username: str) -> DBUser | None:
+        return await self.run_async(
+            users.fetch_by_name_case_insensitive,
+            username
+        )
+        
+    async def resolve_user_by_safe_name(self, username: str) -> DBUser | None:
+        return await self.run_async(
+            users.fetch_by_safe_name,
             username
         )
 

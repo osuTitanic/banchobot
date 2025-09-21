@@ -24,6 +24,7 @@ class BanchoBot(Bot):
         await self.load_extension("app.extensions.search")
         await self.load_extension("app.extensions.rankings")
         await self.load_extension("app.extensions.pprecord")
+        await self.load_extension("app.extensions.moderation")
         await self.tree.sync()
 
 def run():

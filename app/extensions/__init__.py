@@ -10,3 +10,4 @@ from .simulate import SimulateScore
 from .search import Search
 from .rankings import Rankings
 from .pprecord import PPRecord
+from .moderation import Moderation
