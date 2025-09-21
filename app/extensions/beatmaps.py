@@ -7,3 +7,4 @@
 # /modset - Modify a beatmapset's status
 # /moddiff - Modify a single beatmap's status
 # /fixhash - Update the .osu file hashes of a beatmapset
+# /uploadmap - Upload a single beatmap to local storage
