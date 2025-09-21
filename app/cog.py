@@ -23,7 +23,8 @@ class BaseCog(Cog):
         self.filters = session.filters
         self.database = session.database
         self.requests = session.requests
-        
+        self.ossapi: OssapiAsync | None = None
+
         if not config.OSU_CLIENT_ID or not config.OSU_CLIENT_SECRET:
             return
 

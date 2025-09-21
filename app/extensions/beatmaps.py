@@ -8,3 +8,96 @@
 # /moddiff - Modify a single beatmap's status
 # /fixhash - Update the .osu file hashes of a beatmapset
 # /uploadmap - Upload a single beatmap to local storage
+
+from app.common.database.repositories import beatmapsets
+from app.common.database.objects import DBBeatmapset
+from discord import app_commands, Interaction
+from discord.ext.commands import Bot
+from app.extensions.types import *
+from app.cog import BaseCog
+from app import beatmaps
+
+import config
+
+ALLOWED_ROLE_IDS = {config.STAFF_ROLE_ID, config.BAT_ROLE_ID}
+
+def role_check(interaction: Interaction) -> bool:
+    return any(role.id in ALLOWED_ROLE_IDS for role in interaction.user.roles)
+
+class BeatmapManagement(BaseCog):
+    @app_commands.command(name="addset", description="Add a beatmapset from bancho to Titanic!")
+    @app_commands.check(role_check)
+    async def add_beatmapset(
+        self,
+        interaction: Interaction,
+        beatmapset_id: int,
+        round_decimal_values: bool = True
+    ) -> None:
+        if not self.ossapi:
+            return await interaction.response.send_message(
+                "I am not configured to use the osu!api.",
+                ephemeral=True
+            )
+
+        if await self.fetch_beatmapset(beatmapset_id):
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset_id}` was already added to Titanic!",
+                ephemeral=True
+            )
+
+        try:
+            ossapi_set = await self.ossapi.beatmapset(beatmapset_id)
+            assert ossapi_set is not None
+        except (ValueError, AssertionError):
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset_id}` does not exist on bancho!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+
+        database_set = await self.run_async(
+            beatmaps.store_ossapi_beatmapset,
+            ossapi_set
+        )
+
+        filesize, filesize_novideo = await self.run_async(
+            beatmaps.fetch_osz_filesizes,
+            database_set.id
+        )
+
+        await self.update_beatmapset(
+            database_set.id,
+            {'osz_filesize': filesize, 'osz_filesize_novideo': filesize_novideo}
+        )
+
+        if not round_decimal_values:
+            return await interaction.followup.send(
+                f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!"
+            )
+
+        updates = await self.run_async(
+            beatmaps.fix_beatmap_files,
+            database_set
+        )
+
+        # TODO: Discord webhook updates
+        return await interaction.followup.send(
+            f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!\n"
+            f"(Fixed {len(updates)}/{len(database_set.beatmaps)} beatmaps with decimal values)"
+        )
+
+    async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
+        return await self.run_async(
+            beatmapsets.fetch_one,
+            beatmapset_id
+        )
+        
+    async def update_beatmapset(self, set_id: int, updates: dict) -> int:
+        return await self.run_async(
+            beatmapsets.update,
+            set_id, updates
+        )
+
+async def setup(bot: Bot):
+    await bot.add_cog(BeatmapManagement())

@@ -11,3 +11,4 @@ from .search import Search
 from .rankings import Rankings
 from .pprecord import PPRecord
 from .moderation import Moderation
+from .beatmaps import BeatmapManagement

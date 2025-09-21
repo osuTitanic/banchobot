@@ -25,6 +25,7 @@ class BanchoBot(Bot):
         await self.load_extension("app.extensions.rankings")
         await self.load_extension("app.extensions.pprecord")
         await self.load_extension("app.extensions.moderation")
+        await self.load_extension("app.extensions.beatmaps")
         await self.tree.sync()
 
 def run():
