@@ -5,6 +5,7 @@ from config import DOMAIN_NAME
 from typing import Callable
 
 from app.common.database.objects import DBUser, DBBeatmapset
+from app.common.helpers import permissions
 from app.common.database import users
 from app import session
 
@@ -90,4 +91,10 @@ class BaseCog(Cog):
         return await self.run_async(
             self.events.submit,
             name, *args
+        )
+
+    async def has_permission(self, user_id: int, permission: str) -> bool:
+        return await self.run_async(
+            permissions.has_permission,
+            permission, user_id
         )
