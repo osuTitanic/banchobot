@@ -34,11 +34,11 @@ class TopScores(BaseCog):
         target_mode = user.preferred_mode
 
         if mode is not None:
-            mode = Modes.get(mode, target_mode)
+            target_mode = Modes.get(mode, target_mode)
 
         user_scores = await self.fetch_top_scores(
             user.id,
-            mode,
+            target_mode,
             limit=10
         )
 
