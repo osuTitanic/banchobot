@@ -3,7 +3,7 @@ boto3<2
 boto3-type-annotations-with-docs==0.3.1
 discord.py==2.6.3
 geoip2==5.1.0
-ossapi==5.3.2
+ossapi==5.3.3
 psycopg2-binary==2.9.10
 python-dotenv==1.1.1
 redis==6.4.0
