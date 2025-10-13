@@ -8,14 +8,15 @@
 # /fixhash - Update the .osu file hashes of a beatmapset
 # /downloadset - Download a beatmapset from bancho to local storage
 
-from app.common.database.repositories import beatmapsets
+from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmapset
 from app.common.constants import DatabaseStatus
-from discord import app_commands, Interaction
-from discord.ext.commands import Bot
+from app import beatmaps as beatmap_helper
 from app.extensions.types import *
 from app.cog import BaseCog
-from app import beatmaps
+
+from discord import app_commands, Interaction
+from discord.ext.commands import Bot
 
 import config
 
@@ -58,12 +59,12 @@ class BeatmapManagement(BaseCog):
         await interaction.response.defer()
 
         database_set = await self.run_async(
-            beatmaps.store_ossapi_beatmapset,
+            beatmap_helper.store_ossapi_beatmapset,
             ossapi_set
         )
 
         filesize, filesize_novideo = await self.run_async(
-            beatmaps.fetch_osz_filesizes,
+            beatmap_helper.fetch_osz_filesizes,
             database_set.id
         )
 
@@ -88,7 +89,7 @@ class BeatmapManagement(BaseCog):
             )
 
         updates = await self.run_async(
-            beatmaps.fix_beatmap_files,
+            beatmap_helper.fix_beatmap_files,
             database_set
         )
 
@@ -112,7 +113,7 @@ class BeatmapManagement(BaseCog):
 
     async def update_beatmaps_by_set_id(self, set_id: int, updates: dict) -> int:
         return await self.run_async(
-            beatmaps.beatmaps.update_by_set_id,
+            beatmaps.update_by_set_id,
             set_id, updates
         )
 
