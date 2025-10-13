@@ -23,6 +23,9 @@ ENABLE_DISCORD_BOT = eval(os.environ.get('ENABLE_DISCORD_BOT', 'True').capitaliz
 BOT_PREFIX = os.environ.get('DISCORD_BOT_PREFIX')
 BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 
+STAFF_ROLE_ID = int(os.environ.get('DISCORD_STAFF_ROLE_ID') or '0')
+BAT_ROLE_ID = int(os.environ.get('DISCORD_BAT_ROLE_ID') or '0')
+
 EMAIL_PROVIDER = os.environ.get('EMAIL_PROVIDER')
 EMAIL_SENDER = os.environ.get('EMAIL_SENDER')
 EMAIL_DOMAIN = EMAIL_SENDER.split('@')[-1]
