@@ -1,7 +1,5 @@
 
 # TODO:
-# /deleteset - Delete a beatmapset from the local database
-# /deletemap - Delete a single beatmap from the local database
 # /modset - Modify a beatmapset's status
 # /moddiff - Modify a single beatmap's status
 # /uploadmap - Upload a single beatmap to local storage
@@ -9,7 +7,7 @@
 # /downloadset - Download a beatmapset from bancho to local storage
 
 from app.common.database.repositories import beatmapsets, beatmaps
-from app.common.database.objects import DBBeatmapset
+from app.common.database.objects import DBBeatmapset, DBBeatmap
 from app.common.constants import DatabaseStatus
 from app import beatmaps as beatmap_helper
 from app.extensions.types import *
@@ -99,7 +97,7 @@ class BeatmapManagement(BaseCog):
             f"(Fixed {len(updates)}/{len(database_set.beatmaps)} beatmaps with decimal values)"
         )
 
-    @app_commands.command(name="deleteset", description="Delete a beatmapset from Titanic's local database")
+    @app_commands.command(name="deleteset", description="Delete a beatmapset from Titanic's database")
     @app_commands.check(role_check)
     async def delete_beatmapset_command(
         self,
@@ -110,7 +108,7 @@ class BeatmapManagement(BaseCog):
 
         if not database_set:
             return await interaction.response.send_message(
-                f"Beatmapset `{beatmapset_id}` does not exist in Titanic's local database!",
+                f"Beatmapset `{beatmapset_id}` does not exist on Titanic!",
                 ephemeral=True
             )
 
@@ -130,6 +128,43 @@ class BeatmapManagement(BaseCog):
             f"Successfully deleted beatmapset `{database_set.full_name}`!"
         )
 
+    @app_commands.command(name="deletemap", description="Delete a single beatmap from Titanic's database")
+    @app_commands.check(role_check)
+    async def delete_beatmap_command(
+        self,
+        interaction: Interaction,
+        beatmap_id: int
+    ) -> None:
+        database_map = await self.fetch_beatmap(beatmap_id)
+
+        if not database_map:
+            return await interaction.response.send_message(
+                f"Beatmap `{beatmap_id}` does not exist on Titanic!",
+                ephemeral=True
+            )
+
+        if database_map.status >= DatabaseStatus.Ranked:
+            return await interaction.response.send_message(
+                f"Beatmap `{database_map.full_name}` was approved and cannot be deleted!",
+                ephemeral=True
+            )
+            
+        if len(database_map.beatmapset.beatmaps) <= 1:
+            return await interaction.response.send_message(
+                f"Beatmap `{database_map.full_name}` is the only map in its set, please use `/deleteset {database_map.set_id}` instead!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+        await self.run_async(
+            beatmap_helper.delete_beatmap,
+            database_map
+        )
+
+        return await interaction.followup.send(
+            f"Successfully deleted beatmap `{database_map.full_name}`!"
+        )
+
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
         with self.database.managed_session() as session:
             beatmapset = await self.run_async(
@@ -140,9 +175,24 @@ class BeatmapManagement(BaseCog):
             if not beatmapset:
                 return None
 
-            # Preload beatmaps
+            # Preload beatmaps relationship
             beatmapset.beatmaps
             return beatmapset
+
+    async def fetch_beatmap(self, beatmap_id: int) -> DBBeatmap | None:
+        with self.database.managed_session() as session:
+            beatmap = await self.run_async(
+                beatmaps.fetch_by_id,
+                beatmap_id, session
+            )
+
+            if not beatmap:
+                return None
+
+            # Preload beatmapset relationship
+            beatmap.beatmapset
+            beatmap.beatmapset.beatmaps
+            return beatmap
 
     async def update_beatmapset(self, set_id: int, updates: dict) -> int:
         return await self.run_async(
