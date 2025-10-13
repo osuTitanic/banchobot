@@ -4,8 +4,12 @@ from app.common.database.repositories import users
 from app.common.cache import leaderboards
 from app.extensions.types import *
 from discord.ext.commands import Bot
+from discord import Embed, Color
 from discord.ext import commands
 from app.cog import BaseCog
+
+import config
+import app
 
 class Profile(BaseCog):
     @commands.hybrid_command("profile", description="Display the profile of you or another person", aliases=["stats", "show"])
@@ -49,9 +53,9 @@ class Profile(BaseCog):
         stats: DBStats = user.stats[target_mode]
 
         return await ctx.send(
-            f"Embed is not implemented yet. (User ID: {user.id})",
+            embed=self.render_embed(user, stats, rankings),
             reference=ctx.message,
-            ephemeral=True
+            ephemeral=False
         )
 
     async def player_rankings(
@@ -89,6 +93,63 @@ class Profile(BaseCog):
             # Preload relationships & sort stats
             user.stats.sort(key=lambda s: s.mode)
             return user
+
+    def render_embed(self, user: DBUser, stats: DBStats, rankings: dict) -> Embed:
+        embed = Embed(
+            title=f"Statistics for {user.name}",
+            url=f"http://osu.{config.DOMAIN_NAME}/u/{user.id}",
+            color=Color.blue(),
+        )
+        embed.add_field(
+            name="Ranked score", 
+            value=f"{stats.rscore:,} (#{rankings['rscore']['global']})"
+        )
+        embed.add_field(
+            name="Total score", 
+            value=f"{stats.tscore:,} (#{rankings['tscore']['global']})"
+        )
+        embed.add_field(
+            name="Total hits", 
+            value=f"{stats.total_hits:,}"
+        )
+        embed.add_field(
+            name="Play count", 
+            value=f"{stats.playcount:,}"
+        )
+        embed.add_field(
+            name="Play time", 
+            value=f"{stats.playtime/60/60:,.2f}h"
+        )
+        embed.add_field(
+            name="Replay views",
+            value=f"{stats.replay_views:,}"
+        )
+        embed.add_field(
+            name="Accuracy",
+            value=f"{stats.acc*100:.2f}%"
+        )
+        embed.add_field(
+            name="Max combo",
+            value=f"{stats.max_combo:,}"
+        )
+        embed.add_field(
+            name="Performance points",
+            value=f"{stats.pp:.0f}pp, {stats.ppv1:.0f}ppv1 (#{rankings['performance']['global']}, #{rankings['ppv1']['global']})"
+        )
+        embed.add_field(
+            name="SS/SS+",
+            value=f"{stats.x_count}/{stats.xh_count}"
+        )
+        embed.add_field(
+            name="S/S+",
+            value=f"{stats.s_count}/{stats.sh_count}"
+        )
+        embed.add_field(
+            name="A/B/C/D",
+            value=f"{stats.a_count}/{stats.b_count}/{stats.c_count}/{stats.d_count}",
+        )
+        embed.set_thumbnail(url=f"http://osu.{config.DOMAIN_NAME}/a/{user.id}?h=50")
+        return embed
 
 async def setup(bot: Bot):
     await bot.add_cog(Profile())
