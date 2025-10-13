@@ -1,7 +1,5 @@
 
-# TODO:
-# /uploadmap - Upload a single beatmap to local storage
-# /downloadset - Download a beatmapset from bancho to local storage
+# TODO: /downloadset - Download a beatmapset from bancho to local storage
 
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmapset, DBBeatmap
