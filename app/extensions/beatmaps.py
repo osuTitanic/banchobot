@@ -1,15 +1,16 @@
 
 # TODO:
-# /downloadset - Download a beatmapset from bancho to local storage
 # /deleteset - Delete a beatmapset from the local database
 # /deletemap - Delete a single beatmap from the local database
 # /modset - Modify a beatmapset's status
 # /moddiff - Modify a single beatmap's status
 # /uploadmap - Upload a single beatmap to local storage
 # /fixhash - Update the .osu file hashes of a beatmapset
+# /downloadset - Download a beatmapset from bancho to local storage
 
 from app.common.database.repositories import beatmapsets
 from app.common.database.objects import DBBeatmapset
+from app.common.constants import DatabaseStatus
 from discord import app_commands, Interaction
 from discord.ext.commands import Bot
 from app.extensions.types import *
@@ -30,7 +31,8 @@ class BeatmapManagement(BaseCog):
         self,
         interaction: Interaction,
         beatmapset_id: int,
-        round_decimal_values: bool = True
+        round_decimal_values: bool = True,
+        move_to_pending: bool = True
     ) -> None:
         if not self.ossapi:
             return await interaction.response.send_message(
@@ -70,6 +72,16 @@ class BeatmapManagement(BaseCog):
             {'osz_filesize': filesize, 'osz_filesize_novideo': filesize_novideo}
         )
 
+        if move_to_pending:
+            await self.update_beatmapset(
+                database_set.id,
+                {'status': DatabaseStatus.Pending.value}
+            )
+            await self.update_beatmaps_by_set_id(
+                database_set.id,
+                {'status': DatabaseStatus.Pending.value}
+            )
+
         if not round_decimal_values:
             return await interaction.followup.send(
                 f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!"
@@ -91,10 +103,16 @@ class BeatmapManagement(BaseCog):
             beatmapsets.fetch_one,
             beatmapset_id
         )
-        
+
     async def update_beatmapset(self, set_id: int, updates: dict) -> int:
         return await self.run_async(
             beatmapsets.update,
+            set_id, updates
+        )
+
+    async def update_beatmaps_by_set_id(self, set_id: int, updates: dict) -> int:
+        return await self.run_async(
+            beatmaps.beatmaps.update_by_set_id,
             set_id, updates
         )
 
