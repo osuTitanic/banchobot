@@ -1,6 +1,7 @@
 
-from app.common.database.repositories import beatmaps, beatmapsets, wrapper
 from app.common.database.objects import DBBeatmapset, DBBeatmap
+from app.common.database.repositories import wrapper
+from app.common.database.repositories import *
 from typing import Dict, Tuple, Union, List
 from sqlalchemy.orm import Session
 from ossapi import Beatmapset
@@ -212,6 +213,39 @@ def fix_beatmap_files(beatmapset: DBBeatmapset, session: Session = ...) -> List[
         updated_beatmaps.append(beatmap)
 
     return updated_beatmaps
+
+@wrapper.session_wrapper
+def delete_beatmapset(beatmapset: DBBeatmapset, session: Session = ...) -> None:
+    app.session.storage.remove_osz2(beatmapset.id)
+    app.session.storage.remove_osz(beatmapset.id)
+    app.session.storage.remove_background(beatmapset.id)
+    app.session.storage.remove_mp3(beatmapset.id)
+
+    for beatmap in beatmapset.beatmaps:
+        app.session.storage.remove_beatmap_file(beatmap.id)
+    
+    # Delete all related data
+    for beatmap in beatmapset.beatmaps:
+        collaborations.delete_requests_by_beatmap(beatmap.id, session=session)
+        collaborations.delete_by_beatmap(beatmap.id, session=session)
+
+    modding.delete_by_set_id(beatmapset.id, session=session)
+    ratings.delete_by_set_id(beatmapset.id, session=session)
+    plays.delete_by_set_id(beatmapset.id, session=session)
+    nominations.delete_all(beatmapset.id, session=session)
+    favourites.delete_all(beatmapset.id, session=session)
+    beatmaps.delete_by_set_id(beatmapset.id, session=session)
+    beatmapsets.delete_by_id(beatmapset.id, session=session)
+
+@wrapper.session_wrapper
+def delete_beatmap(beatmap: DBBeatmap, session: Session = ...) -> None:
+    app.session.storage.remove_beatmap_file(beatmap.id)
+
+    collaborations.delete_requests_by_beatmap(beatmap.id, session=session)
+    collaborations.delete_by_beatmap(beatmap.id, session=session)
+    ratings.delete_by_beatmap_hash(beatmap.md5, session=session)
+    plays.delete_by_beatmap_id(beatmap.id, session=session)
+    beatmaps.delete_by_id(beatmap.id, session=session)
 
 def parse_number(value: str) -> int | float:
     for cast in (int, float):

@@ -99,11 +99,50 @@ class BeatmapManagement(BaseCog):
             f"(Fixed {len(updates)}/{len(database_set.beatmaps)} beatmaps with decimal values)"
         )
 
-    async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
-        return await self.run_async(
-            beatmapsets.fetch_one,
-            beatmapset_id
+    @app_commands.command(name="deleteset", description="Delete a beatmapset from Titanic's local database")
+    @app_commands.check(role_check)
+    async def delete_beatmapset_command(
+        self,
+        interaction: Interaction,
+        beatmapset_id: int
+    ) -> None:
+        database_set = await self.fetch_beatmapset(beatmapset_id)
+
+        if not database_set:
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset_id}` does not exist in Titanic's local database!",
+                ephemeral=True
+            )
+
+        if database_set.status >= DatabaseStatus.Ranked:
+            return await interaction.response.send_message(
+                f"Beatmapset `{database_set.full_name}` was approved and cannot be deleted!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+        await self.run_async(
+            beatmap_helper.delete_beatmapset,
+            database_set
         )
+
+        return await interaction.followup.send(
+            f"Successfully deleted beatmapset `{database_set.full_name}`!"
+        )
+
+    async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
+        with self.database.managed_session() as session:
+            beatmapset = await self.run_async(
+                beatmapsets.fetch_one,
+                beatmapset_id, session
+            )
+
+            if not beatmapset:
+                return None
+
+            # Preload beatmaps
+            beatmapset.beatmaps
+            return beatmapset
 
     async def update_beatmapset(self, set_id: int, updates: dict) -> int:
         return await self.run_async(
