@@ -164,6 +164,38 @@ class BeatmapManagement(BaseCog):
         return await interaction.followup.send(
             f"Successfully deleted beatmap `{database_map.full_name}`!"
         )
+        
+    @app_commands.command(name="modset", description="Modify a beatmapset's status")
+    @app_commands.check(role_check)
+    async def modify_beatmapset_command(
+        self,
+        interaction: Interaction,
+        beatmapset_id: int,
+        status_type: StatusType
+    ) -> None:
+        status = DatabaseStatus.from_lowercase(status_type)
+        database_set = await self.fetch_beatmapset(beatmapset_id)
+
+        if not database_set:
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset_id}` does not exist on Titanic!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+        await self.update_beatmapset(
+            database_set.id,
+            {'status': status.value}
+        )
+        await self.update_beatmaps_by_set_id(
+            database_set.id,
+            {'status': status.value}
+        )
+
+        # TODO: Discord webhook updates
+        return await interaction.followup.send(
+            f"Successfully updated the status of [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to `{status.name}`!"
+        )
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
         with self.database.managed_session() as session:
