@@ -54,8 +54,7 @@ class Profile(BaseCog):
 
         return await ctx.send(
             embed=self.render_embed(user, stats, rankings),
-            reference=ctx.message,
-            ephemeral=False
+            reference=ctx.message
         )
 
     async def player_rankings(

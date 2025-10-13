@@ -41,8 +41,7 @@ class RecentScore(BaseCog):
 
         return await ctx.send(
             embed=await self.render_embed(score_list[0], user),
-            reference=ctx.message,
-            ephemeral=True
+            reference=ctx.message
         )
 
     async def calculate_difficulty(

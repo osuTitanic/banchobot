@@ -47,8 +47,7 @@ class Rankings(BaseCog):
 
         return await ctx.send(
             embed=embed,
-            reference=ctx.message,
-            ephemeral=True
+            reference=ctx.message
         )
 
     async def fetch_top_players(

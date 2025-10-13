@@ -30,7 +30,7 @@ class PPRecord(BaseCog):
         embed.add_field(name="Taiko", value=self.format_score(taiko), inline=False)
         embed.add_field(name="Catch", value=self.format_score(catch), inline=False)
         embed.add_field(name="Mania", value=self.format_score(mania), inline=False)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, reference=ctx.message)
 
     async def fetch_pp_record(self, mode: int, mods: int | None = None) -> DBScore | None:
         with self.database.managed_session() as session:
