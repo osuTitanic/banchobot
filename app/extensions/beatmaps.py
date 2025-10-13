@@ -1,9 +1,6 @@
 
 # TODO:
-# /modset - Modify a beatmapset's status
-# /moddiff - Modify a single beatmap's status
 # /uploadmap - Upload a single beatmap to local storage
-# /fixhash - Update the .osu file hashes of a beatmapset
 # /downloadset - Download a beatmapset from bancho to local storage
 
 from app.common.database.repositories import beatmapsets, beatmaps
@@ -196,6 +193,34 @@ class BeatmapManagement(BaseCog):
         return await interaction.followup.send(
             f"Successfully updated the status of [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to `{status.name}`!"
         )
+        
+    @app_commands.command(name="moddiff", description="Modify a single beatmap's status")
+    @app_commands.check(role_check)
+    async def modify_beatmap_command(
+        self,
+        interaction: Interaction,
+        beatmap_id: int,
+        status_type: StatusType
+    ) -> None:
+        status = DatabaseStatus.from_lowercase(status_type)
+        database_map = await self.fetch_beatmap(beatmap_id)
+
+        if not database_map:
+            return await interaction.response.send_message(
+                f"Beatmap `{beatmap_id}` does not exist on Titanic!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+        await self.update_beatmap(
+            database_map.id,
+            {'status': status.value}
+        )
+
+        # TODO: Discord webhook updates
+        return await interaction.followup.send(
+            f"Successfully updated the status of [{database_map.full_name}](http://osu.{config.DOMAIN_NAME}/b/{database_map.id}) to `{status.name}`!"
+        )
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
         with self.database.managed_session() as session:
@@ -236,6 +261,12 @@ class BeatmapManagement(BaseCog):
         return await self.run_async(
             beatmaps.update_by_set_id,
             set_id, updates
+        )
+
+    async def update_beatmap(self, beatmap_id: int, updates: dict) -> int:
+        return await self.run_async(
+            beatmaps.update,
+            beatmap_id, updates
         )
 
 async def setup(bot: Bot):
