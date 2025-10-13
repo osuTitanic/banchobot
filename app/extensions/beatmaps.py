@@ -10,9 +10,10 @@ from app import beatmaps as beatmap_helper
 from app.extensions.types import *
 from app.cog import BaseCog
 
-from discord import app_commands, Interaction
+from discord import app_commands, Interaction, Attachment
 from discord.ext.commands import Bot
 
+import hashlib
 import config
 
 ALLOWED_ROLE_IDS = {config.STAFF_ROLE_ID, config.BAT_ROLE_ID}
@@ -101,28 +102,28 @@ class BeatmapManagement(BaseCog):
         interaction: Interaction,
         beatmapset_id: int
     ) -> None:
-        database_set = await self.fetch_beatmapset(beatmapset_id)
+        beatmapset = await self.fetch_beatmapset(beatmapset_id)
 
-        if not database_set:
+        if not beatmapset:
             return await interaction.response.send_message(
                 f"Beatmapset `{beatmapset_id}` does not exist on Titanic!",
                 ephemeral=True
             )
 
-        if database_set.status >= DatabaseStatus.Ranked:
+        if beatmapset.status >= DatabaseStatus.Ranked:
             return await interaction.response.send_message(
-                f"Beatmapset `{database_set.full_name}` was approved and cannot be deleted!",
+                f"Beatmapset `{beatmapset.full_name}` was approved and cannot be deleted!",
                 ephemeral=True
             )
 
         await interaction.response.defer()
         await self.run_async(
             beatmap_helper.delete_beatmapset,
-            database_set
+            beatmapset
         )
 
         return await interaction.followup.send(
-            f"Successfully deleted beatmapset `{database_set.full_name}`!"
+            f"Successfully deleted beatmapset `{beatmapset.full_name}`!"
         )
 
     @app_commands.command(name="deletemap", description="Delete a single beatmap from Titanic's database")
@@ -132,34 +133,34 @@ class BeatmapManagement(BaseCog):
         interaction: Interaction,
         beatmap_id: int
     ) -> None:
-        database_map = await self.fetch_beatmap(beatmap_id)
+        beatmap = await self.fetch_beatmap(beatmap_id)
 
-        if not database_map:
+        if not beatmap:
             return await interaction.response.send_message(
                 f"Beatmap `{beatmap_id}` does not exist on Titanic!",
                 ephemeral=True
             )
 
-        if database_map.status >= DatabaseStatus.Ranked:
+        if beatmap.status >= DatabaseStatus.Ranked:
             return await interaction.response.send_message(
-                f"Beatmap `{database_map.full_name}` was approved and cannot be deleted!",
+                f"Beatmap `{beatmap.full_name}` was approved and cannot be deleted!",
                 ephemeral=True
             )
             
-        if len(database_map.beatmapset.beatmaps) <= 1:
+        if len(beatmap.beatmapset.beatmaps) <= 1:
             return await interaction.response.send_message(
-                f"Beatmap `{database_map.full_name}` is the only map in its set, please use `/deleteset {database_map.set_id}` instead!",
+                f"Beatmap `{beatmap.full_name}` is the only map in its set, please use `/deleteset {beatmap.set_id}` instead!",
                 ephemeral=True
             )
 
         await interaction.response.defer()
         await self.run_async(
             beatmap_helper.delete_beatmap,
-            database_map
+            beatmap
         )
 
         return await interaction.followup.send(
-            f"Successfully deleted beatmap `{database_map.full_name}`!"
+            f"Successfully deleted beatmap `{beatmap.full_name}`!"
         )
         
     @app_commands.command(name="modset", description="Modify a beatmapset's status")
@@ -171,9 +172,9 @@ class BeatmapManagement(BaseCog):
         status_type: StatusType
     ) -> None:
         status = DatabaseStatus.from_lowercase(status_type)
-        database_set = await self.fetch_beatmapset(beatmapset_id)
+        beatmapset = await self.fetch_beatmapset(beatmapset_id)
 
-        if not database_set:
+        if not beatmapset:
             return await interaction.response.send_message(
                 f"Beatmapset `{beatmapset_id}` does not exist on Titanic!",
                 ephemeral=True
@@ -181,17 +182,17 @@ class BeatmapManagement(BaseCog):
 
         await interaction.response.defer()
         await self.update_beatmapset(
-            database_set.id,
+            beatmapset.id,
             {'status': status.value}
         )
         await self.update_beatmaps_by_set_id(
-            database_set.id,
+            beatmapset.id,
             {'status': status.value}
         )
 
         # TODO: Discord webhook updates
         return await interaction.followup.send(
-            f"Successfully updated the status of [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to `{status.name}`!"
+            f"Successfully updated the status of [{beatmapset.full_name}](http://osu.{config.DOMAIN_NAME}/s/{beatmapset.id}) to `{status.name}`!"
         )
         
     @app_commands.command(name="moddiff", description="Modify a single beatmap's status")
@@ -203,9 +204,9 @@ class BeatmapManagement(BaseCog):
         status_type: StatusType
     ) -> None:
         status = DatabaseStatus.from_lowercase(status_type)
-        database_map = await self.fetch_beatmap(beatmap_id)
+        beatmap = await self.fetch_beatmap(beatmap_id)
 
-        if not database_map:
+        if not beatmap:
             return await interaction.response.send_message(
                 f"Beatmap `{beatmap_id}` does not exist on Titanic!",
                 ephemeral=True
@@ -213,13 +214,45 @@ class BeatmapManagement(BaseCog):
 
         await interaction.response.defer()
         await self.update_beatmap(
-            database_map.id,
+            beatmap.id,
             {'status': status.value}
         )
 
         # TODO: Discord webhook updates
         return await interaction.followup.send(
-            f"Successfully updated the status of [{database_map.full_name}](http://osu.{config.DOMAIN_NAME}/b/{database_map.id}) to `{status.name}`!"
+            f"Successfully updated the status of [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id}) to `{status.name}`!"
+        )
+
+    @app_commands.command(name="uploadmap", description="Upload and replace single beatmap's .osu file")
+    @app_commands.check(role_check)
+    async def upload_beatmap_command(
+        self,
+        interaction: Interaction,
+        file: Attachment,
+        beatmap_id: int
+    ) -> None:
+        beatmap = await self.fetch_beatmap(beatmap_id)
+
+        if not beatmap:
+            return await interaction.response.send_message(
+                f"Beatmap `{beatmap_id}` does not exist on Titanic!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+        file = await file.read()
+
+        await self.run_async(
+            self.storage.upload_beatmap_file,
+            beatmap.id, file
+        )
+        await self.update_beatmap(
+            beatmap.id,
+            {'md5': hashlib.md5(file).hexdigest()}
+        )
+
+        return await interaction.followup.send(
+            f"Successfully replaced the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!"
         )
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:

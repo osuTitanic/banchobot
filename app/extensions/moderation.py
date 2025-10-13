@@ -1,4 +1,6 @@
 
+# TODO: /wipescores - Wipe scores from a beatmap or beatmapset
+
 from app.common.database.objects import DBGroupEntry, DBUser, DBName, DBGroup
 from app.common.database.repositories import groups, names
 from app.common.constants import regexes
