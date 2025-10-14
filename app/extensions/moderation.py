@@ -233,7 +233,7 @@ class Moderation(BaseCog):
 
     async def fetch_groups(self) -> List[DBGroup]:
         return await self.run_async(
-            groups.fetch_all
+            groups.fetch_all, True
         )
 
     async def create_group_entry(self, user_id: int, group_id: int) -> DBGroupEntry:
