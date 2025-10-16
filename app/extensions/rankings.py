@@ -18,8 +18,8 @@ class Rankings(BaseCog):
     async def rankings(
         self,
         ctx: commands.Context,
-        mode: ModeType = "standard",
-        type: RankingType = "performance"
+        mode: ModeType | None = "standard",
+        type: RankingType | None = "performance"
     ) -> None:
         target_mode = Modes.get(mode, 0)
         mode_type = GameMode(target_mode)
