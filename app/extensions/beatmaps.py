@@ -10,6 +10,7 @@ from app.cog import BaseCog
 
 from discord import app_commands, Interaction, Attachment
 from discord.ext.commands import Bot
+from datetime import datetime
 
 import hashlib
 import config
@@ -187,6 +188,12 @@ class BeatmapManagement(BaseCog):
             beatmapset.id,
             {'status': status.value}
         )
+        
+        if status >= DatabaseStatus.Ranked:
+            await self.update_beatmapset(
+                beatmapset.id,
+                {'approved_at': datetime.now()}
+            )
 
         # TODO: Discord webhook updates
         return await interaction.followup.send(
