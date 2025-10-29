@@ -28,6 +28,7 @@ class BeatmapManagement(BaseCog):
         interaction: Interaction,
         beatmapset_id: int,
         round_decimal_values: bool = True,
+        fix_leadin_times: bool = False,
         move_to_pending: bool = True
     ) -> None:
         if not self.ossapi:
@@ -78,21 +79,24 @@ class BeatmapManagement(BaseCog):
                 {'status': DatabaseStatus.Pending.value}
             )
 
-        if not round_decimal_values:
-            return await interaction.followup.send(
-                f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!"
-            )
+        followup = f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!"
 
-        updates = await self.run_async(
-            beatmap_helper.fix_beatmap_files,
-            database_set
-        )
+        if round_decimal_values:
+            updates = await self.run_async(
+                beatmap_helper.fix_beatmap_decimal_values,
+                database_set
+            )
+            followup += f"\n(Fixed {len(updates)}/{len(database_set.beatmaps)} beatmaps with decimal values)"
+
+        if fix_leadin_times:
+            updates = await self.run_async(
+                beatmap_helper.fix_beatmap_lead_in,
+                database_set
+            )
+            followup += f"\n(Fixed lead-in times for {len(updates)}/{len(database_set.beatmaps)} beatmaps)"
 
         # TODO: Discord webhook updates
-        return await interaction.followup.send(
-            f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!\n"
-            f"(Fixed {len(updates)}/{len(database_set.beatmaps)} beatmaps with decimal values)"
-        )
+        return await interaction.followup.send(followup)
 
     @app_commands.command(name="deleteset", description="Delete a beatmapset from Titanic's database")
     @app_commands.check(role_check)

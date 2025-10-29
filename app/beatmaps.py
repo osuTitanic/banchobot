@@ -152,7 +152,7 @@ def fetch_osz_filesizes(set_id: int) -> Tuple[int, int]:
     return filesize, filesize_novideo
 
 @wrapper.session_wrapper
-def fix_beatmap_files(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
+def fix_beatmap_decimal_values(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
     """Update the .osu files of a beatmapset to round OD/AR/HP/CS values"""
     updated_beatmaps = list()
 
@@ -164,7 +164,7 @@ def fix_beatmap_files(beatmapset: DBBeatmapset, session: Session = ...) -> List[
 
         version, beatmap_dict = deserialize(beatmap_file.decode())
         beatmap_updates = {}
-        
+
         if 'Difficulty' not in beatmap_dict:
             # Invalid beatmap file somehow...
             app.session.logger.warning(f"Invalid beatmap file for '{beatmap.id}'")
@@ -209,6 +209,44 @@ def fix_beatmap_files(beatmapset: DBBeatmapset, session: Session = ...) -> List[
             beatmap_updates,
             session=session
         )
+
+        updated_beatmaps.append(beatmap)
+
+    return updated_beatmaps
+
+@wrapper.session_wrapper
+def fix_beatmap_lead_in(beatmapset: DBBeatmapset, minimum_leadin: int = 1500, session: Session = ...) -> List[DBBeatmap]:
+    """Update the .osu files of a beatmapset to set a minimum audio lead-in time"""
+    updated_beatmaps = list()
+
+    for beatmap in beatmapset.beatmaps:
+        beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+        if not beatmap_file:
+            continue
+
+        version, beatmap_dict = deserialize(beatmap_file.decode())
+
+        if 'General' not in beatmap_dict:
+            # Invalid beatmap file somehow...
+            app.session.logger.warning(f"Invalid beatmap file for '{beatmap.id}'")
+            continue
+
+        current_leadin = beatmap_dict['General'].get('AudioLeadIn', '0')
+        current_leadin_value = int(current_leadin)
+
+        if current_leadin_value >= minimum_leadin:
+            continue
+
+        beatmap_dict['General']['AudioLeadIn'] = f'{minimum_leadin}'
+
+        # Get new file
+        content = serialize(beatmap_dict, version)
+        content_hash = hashlib.md5(content).hexdigest()
+
+        # Upload to storage & update database
+        app.session.storage.upload_beatmap_file(beatmap.id, content)
+        beatmaps.update(beatmap.id, {'md5': content_hash}, session)
 
         updated_beatmaps.append(beatmap)
 
