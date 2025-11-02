@@ -63,6 +63,12 @@ class BeatmapManagement(BaseCog):
             beatmap_helper.fetch_osz_filesizes,
             database_set.id
         )
+        
+        # Update slider multiplier values inside database
+        await self.run_async(
+            beatmap_helper.update_slider_multiplier,
+            database_set
+        )
 
         await self.update_beatmapset(
             database_set.id,

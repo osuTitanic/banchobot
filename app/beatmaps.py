@@ -253,6 +253,41 @@ def fix_beatmap_lead_in(beatmapset: DBBeatmapset, minimum_leadin: int = 1500, se
     return updated_beatmaps
 
 @wrapper.session_wrapper
+def update_slider_multiplier(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
+    """Read the slider multiplier from each beatmap file and update the value in the database"""
+    updated_beatmaps = list()
+
+    for beatmap in beatmapset.beatmaps:
+        beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+        if not beatmap_file:
+            continue
+
+        version, beatmap_dict = deserialize(beatmap_file.decode())
+
+        if 'Difficulty' not in beatmap_dict:
+            app.session.logger.warning(f"Invalid beatmap file for '{beatmap.id}'")
+            continue
+
+        if 'SliderMultiplier' not in beatmap_dict['Difficulty']:
+            app.session.logger.warning(f"No 'SliderMultiplier' found for '{beatmap.id}'")
+            continue
+
+        slider_multiplier = float(beatmap_dict['Difficulty']['SliderMultiplier'])
+
+        if beatmap.slider_multiplier == slider_multiplier:
+            continue
+
+        beatmaps.update(
+            beatmap.id,
+            {'slider_multiplier': slider_multiplier},
+            session=session
+        )
+        updated_beatmaps.append(beatmap)
+
+    return updated_beatmaps
+
+@wrapper.session_wrapper
 def delete_beatmapset(beatmapset: DBBeatmapset, session: Session = ...) -> None:
     app.session.storage.remove_osz2(beatmapset.id)
     app.session.storage.remove_osz(beatmapset.id)
