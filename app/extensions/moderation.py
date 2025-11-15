@@ -272,18 +272,5 @@ class Moderation(BaseCog):
             id, data
         )
 
-    async def resolve_user_from_identifier(self, identifier: str) -> DBUser | None:
-        if identifier.isnumeric():
-            return await self.resolve_user_by_id(int(identifier))
-
-        if identifier.startswith("<@") and identifier.endswith(">"):
-            discord_id = identifier[2:-1]
-            discord_id = discord_id.strip("!")
-
-            if discord_id.isnumeric():
-                return await self.resolve_user(int(discord_id))
-
-        return await self.resolve_user_by_name_case_insensitive(identifier)
-
 async def setup(bot: Bot):
     await bot.add_cog(Moderation())
