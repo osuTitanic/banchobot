@@ -22,7 +22,7 @@ class TopScores(BaseCog):
     ) -> None:
         user = (
             await self.resolve_user(ctx.author.id) if username is None else
-            await self.resolve_user_by_name(username)
+            await self.resolve_user_from_identifier(username)
         )
 
         if user is None:
