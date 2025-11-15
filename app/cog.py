@@ -82,6 +82,8 @@ class BaseCog(Cog):
         )
 
     async def resolve_user_from_identifier(self, identifier: str) -> DBUser | None:
+        identifier = identifier.strip()
+
         if identifier.isnumeric():
             return await self.resolve_user_by_id(int(identifier))
 

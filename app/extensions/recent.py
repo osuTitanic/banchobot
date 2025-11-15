@@ -18,7 +18,7 @@ class RecentScore(BaseCog):
     async def recent_score(self, ctx: commands.Context, username: str | None = None) -> None:
         user = (
             await self.resolve_user(ctx.author.id) if username is None else
-            await self.resolve_user_by_name(username)
+            await self.resolve_user_from_identifier(username)
         )
 
         if user is None:
