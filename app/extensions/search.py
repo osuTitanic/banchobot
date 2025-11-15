@@ -5,7 +5,7 @@ from discord.ui import View, button
 from discord.ext import commands
 from config import DOMAIN_NAME
 
-from app.common.constants import BeatmapGenre, BeatmapLanguage, DatabaseStatus
+from app.common.constants import BeatmapGenre, BeatmapLanguage, BeatmapStatus
 from app.common.database.repositories import beatmapsets
 from app.common.database.objects import DBBeatmapset
 from app.cog import BaseCog
@@ -44,7 +44,7 @@ class Search(BaseCog):
         embed.add_field(name="Title", value=beatmapset.title)
         embed.add_field(name="Artist", value=beatmapset.artist)
         embed.add_field(name="Creator", value=beatmapset.creator)
-        embed.add_field(name="Status", value=DatabaseStatus(beatmapset.status).name)
+        embed.add_field(name="Status", value=BeatmapStatus(beatmapset.status).name)
         embed.add_field(name="Genre", value=BeatmapGenre(beatmapset.genre_id).name)
         embed.add_field(name="Language", value=BeatmapLanguage(beatmapset.language_id).name)
         return embed

@@ -3,7 +3,7 @@
 
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmapset, DBBeatmap
-from app.common.constants import DatabaseStatus
+from app.common.constants import BeatmapStatus
 from app import beatmaps as beatmap_helper
 from app.extensions.types import *
 from app.cog import BaseCog
@@ -78,11 +78,11 @@ class BeatmapManagement(BaseCog):
         if move_to_pending:
             await self.update_beatmapset(
                 database_set.id,
-                {'status': DatabaseStatus.Pending.value}
+                {'status': BeatmapStatus.Pending.value}
             )
             await self.update_beatmaps_by_set_id(
                 database_set.id,
-                {'status': DatabaseStatus.Pending.value}
+                {'status': BeatmapStatus.Pending.value}
             )
 
         followup = f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!"
@@ -119,7 +119,7 @@ class BeatmapManagement(BaseCog):
                 ephemeral=True
             )
 
-        if beatmapset.status >= DatabaseStatus.Ranked:
+        if beatmapset.status >= BeatmapStatus.Ranked:
             return await interaction.response.send_message(
                 f"Beatmapset `{beatmapset.full_name}` was approved and cannot be deleted!",
                 ephemeral=True
@@ -150,7 +150,7 @@ class BeatmapManagement(BaseCog):
                 ephemeral=True
             )
 
-        if beatmap.status >= DatabaseStatus.Ranked:
+        if beatmap.status >= BeatmapStatus.Ranked:
             return await interaction.response.send_message(
                 f"Beatmap `{beatmap.full_name}` was approved and cannot be deleted!",
                 ephemeral=True
@@ -180,7 +180,7 @@ class BeatmapManagement(BaseCog):
         beatmapset_id: int,
         status_type: StatusType
     ) -> None:
-        status = DatabaseStatus.from_lowercase(status_type)
+        status = BeatmapStatus.from_lowercase(status_type)
         beatmapset = await self.fetch_beatmapset(beatmapset_id)
 
         if not beatmapset:
@@ -199,7 +199,7 @@ class BeatmapManagement(BaseCog):
             {'status': status.value}
         )
         
-        if status >= DatabaseStatus.Ranked:
+        if status >= BeatmapStatus.Ranked:
             await self.update_beatmapset(
                 beatmapset.id,
                 {'approved_at': datetime.now()}
@@ -218,7 +218,7 @@ class BeatmapManagement(BaseCog):
         beatmap_id: int,
         status_type: StatusType
     ) -> None:
-        status = DatabaseStatus.from_lowercase(status_type)
+        status = BeatmapStatus.from_lowercase(status_type)
         beatmap = await self.fetch_beatmap(beatmap_id)
 
         if not beatmap:
