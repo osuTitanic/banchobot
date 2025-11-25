@@ -185,6 +185,9 @@ def fix_beatmap_decimal_values(beatmapset: DBBeatmapset, session: Session = ...)
 
             if isinstance(value, int):
                 continue
+            
+            if isinstance(value, str):
+                continue
 
             # Update value
             beatmap_updates[short_key] = round(value) # Database
@@ -323,6 +326,6 @@ def delete_beatmap(beatmap: DBBeatmap, session: Session = ...) -> None:
 def parse_number(value: str) -> int | float:
     for cast in (int, float):
         try:
-            return cast(value)
+            return cast(value.strip())
         except ValueError:
             continue
