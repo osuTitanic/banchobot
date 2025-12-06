@@ -35,8 +35,9 @@ class BaseCog(Cog):
         )
 
     @staticmethod
-    async def run_async(func: Callable, *args):
-        return await asyncio.get_event_loop().run_in_executor(None, func, *args)
+    async def run_async(func: Callable, *args, **kwargs):
+        function_wrapper = lambda: func(*args, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, function_wrapper)
 
     @staticmethod
     def avatar_url(user: DBUser) -> str:
