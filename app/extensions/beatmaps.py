@@ -1,6 +1,4 @@
 
-# TODO: /downloadset - Download a beatmapset from bancho to local storage
-
 from app.common.database.repositories import beatmapsets, beatmaps
 from app.common.database.objects import DBBeatmapset, DBBeatmap
 from app.common.constants import BeatmapStatus
@@ -268,6 +266,88 @@ class BeatmapManagement(BaseCog):
 
         return await interaction.followup.send(
             f"Successfully replaced the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!"
+        )
+
+    @app_commands.command(name="downloadset", description="Move the files of a beatmapset from Bancho to Titanic")
+    @app_commands.check(role_check)
+    async def download_beatmapset_command(
+        self,
+        interaction: Interaction,
+        beatmapset_id: int
+    ) -> None:
+        if not (beatmapset := await self.fetch_beatmapset(beatmapset_id)):
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset_id}` does not exist on Titanic!",
+                ephemeral=True
+            )
+            
+        if beatmapset.server != 0 or beatmapset.download_server != 0:
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset.full_name}` is already hosted on Titanic!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+        response_details = []
+
+        background_file = await self.run_async(
+            self.storage.get_background,
+            f"{beatmapset_id}l"
+        )
+        audio_file = await self.run_async(
+            self.storage.get_mp3,
+            beatmapset_id
+        )
+
+        if background_file is not None:
+            await self.run_async(
+                self.storage.upload_background,
+                beatmapset_id, background_file
+            )
+
+        if audio_file is not None:
+            await self.run_async(
+                self.storage.upload_mp3,
+                beatmapset_id, audio_file
+            )
+
+        for beatmap in beatmapset.beatmaps:
+            osu_file = await self.run_async(
+                self.storage.get_beatmap,
+                beatmap.id
+            )
+
+            if osu_file is None:
+                response_details.append(f"- Beatmap `{beatmap.id}`: .osu file not found")
+                continue
+
+            await self.run_async(
+                self.storage.upload_beatmap_file,
+                beatmap.id, osu_file
+            )
+
+        osz_response = await self.run_async(
+            self.storage.get_osz,
+            beatmapset_id
+        )
+
+        if osz_response is not None:
+            await self.run_async(
+                self.storage.upload_osz,
+                beatmapset_id, b"".join(osz_response)
+            )
+        else:
+            response_details.append(
+                f"- Beatmapset `{beatmapset.id}`: .osz file not found"
+            )
+
+        await self.update_beatmapset(
+            beatmapset.id,
+            {'download_server': 1}
+        )
+        return await interaction.followup.send(
+            f"Successfully moved all files for [{beatmapset.full_name}](http://osu.{config.DOMAIN_NAME}/s/{beatmapset.id}) to Titanic!\n" +
+            "\n".join(response_details)
         )
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
