@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 
 def main():
-    if not config.ENABLE_DISCORD_BOT:
+    if not config.ENABLE_DISCORD_BOT or not config.BOT_TOKEN:
         logging.warning("BanchoBot is disabled, exiting...")
         exit(0)
 
