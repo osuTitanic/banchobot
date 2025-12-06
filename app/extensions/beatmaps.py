@@ -10,8 +10,10 @@ from discord import app_commands, Interaction, Attachment
 from discord.ext.commands import Bot
 from datetime import datetime
 
+import zipfile
 import hashlib
 import config
+import io
 
 ALLOWED_ROLE_IDS = {config.STAFF_ROLE_ID, config.BAT_ROLE_ID}
 
@@ -348,6 +350,76 @@ class BeatmapManagement(BaseCog):
         return await interaction.followup.send(
             f"Successfully moved all files for [{beatmapset.full_name}](http://osu.{config.DOMAIN_NAME}/s/{beatmapset.id}) to Titanic!\n" +
             "\n".join(response_details)
+        )
+
+    @app_commands.command(name="updateosz", description="Update the beatmap .osu files inside a beatmapset's .osz")
+    @app_commands.check(role_check)
+    async def update_beatmapset_osz_command(
+        self,
+        interaction: Interaction,
+        beatmapset_id: int
+    ) -> None:
+        beatmapset = await self.fetch_beatmapset(beatmapset_id)
+
+        if not beatmapset:
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset_id}` does not exist on Titanic!",
+                ephemeral=True
+            )
+
+        if beatmapset.download_server != 1:
+            return await interaction.response.send_message(
+                f"Beatmapset `{beatmapset.full_name}` is not hosted on Titanic!\n"
+                f"(Please use `/downloadset {beatmapset.id}` first)",
+                ephemeral=True
+            )
+
+        await interaction.response.defer()
+
+        osz_file = await self.run_async(
+            self.storage.get_osz_internal,
+            beatmapset.id
+        )
+
+        if osz_file is None:
+            return await interaction.followup.send(
+                f"Beatmapset `{beatmapset.full_name}` does not have a .osz file stored. "
+                f"Please upload one from the website!",
+                ephemeral=True
+            )
+
+        with zipfile.ZipFile(io.BytesIO(osz_file), 'r') as osz_read:
+            write_buffer = io.BytesIO()
+
+            with zipfile.ZipFile(write_buffer, 'w', zipfile.ZIP_DEFLATED) as osz_write:
+                # Copy over .osu files
+                for beatmap in beatmapset.beatmaps:
+                    if beatmap.status <= BeatmapStatus.Inactive:
+                        continue
+
+                    osu_file = await self.run_async(
+                        self.storage.get_beatmap,
+                        beatmap.id
+                    )
+
+                    if osu_file is None:
+                        continue
+
+                    osz_write.writestr(beatmap.filename, osu_file)
+
+                # Copy over other files (backgrounds, audio, etc...)
+                for item in osz_read.infolist():
+                    if not item.filename.endswith('.osu'):
+                        osz_write.writestr(item, osz_read.read(item.filename))
+
+        await self.run_async(
+            self.storage.upload_osz,
+            beatmapset.id, write_buffer.getvalue()
+        )
+        return await interaction.followup.send(
+            f"Successfully updated the .osz file for [{beatmapset.full_name}](http://osu.{config.DOMAIN_NAME}/s/{beatmapset.id})!\n"
+            f"Download it [here](http://osu.{config.DOMAIN_NAME}/d/{beatmapset.id}). "
+            f"({len(beatmapset.beatmaps)} beatmaps updated)"
         )
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
