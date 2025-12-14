@@ -12,6 +12,12 @@ class BanchoBot(Bot):
         app.session.filters.populate()
         await self.load_cogs()
 
+    async def close(self):
+        app.session.redis.close()
+        app.session.database.engine.dispose()
+        await app.session.redis_async.close()
+        await super().close()
+
     async def load_cogs(self):
         await self.load_extension("app.extensions.errors")
         await self.load_extension("app.extensions.bridge")
