@@ -1,4 +1,5 @@
 
+from app.common.config import config_instance as config
 from app.common.database.repositories import scores
 from app.common.database.objects import DBScore
 from app.common.constants import Mods
@@ -7,9 +8,6 @@ from discord.ext.commands import Bot
 from discord.ext import commands
 from discord import Embed, Color
 from app.cog import BaseCog
-
-import config
-import app
 
 class PPRecord(BaseCog):
     @commands.hybrid_command("pprecord", description="Displays the current pp record")

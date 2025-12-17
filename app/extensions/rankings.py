@@ -1,4 +1,5 @@
 
+from app.common.config import config_instance as config
 from app.common.database.repositories import users
 from app.common.database.objects import DBUser
 from app.common.cache import leaderboards
@@ -9,9 +10,6 @@ from discord.ext import commands
 from discord import Embed, Color
 from typing import Tuple, List
 from app.cog import BaseCog
-
-import config
-import app
 
 class Rankings(BaseCog):
     @commands.hybrid_command("rankings", description="Display rankings", aliases=["leaderboard", "lb"])

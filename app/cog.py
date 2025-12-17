@@ -1,17 +1,16 @@
 
 from ossapi.ossapiv2_async import OssapiAsync
 from discord.ext.commands import Cog
-from config import DOMAIN_NAME
 from typing import Callable
 
 from app.common.database.objects import DBUser, DBBeatmapset
+from app.common.config import config_instance as config
 from app.common.helpers import permissions
 from app.common.database import users
 from app import session
 
 import hashlib
 import asyncio
-import config
 
 class BaseCog(Cog):
     def __init__(self) -> None:
@@ -41,14 +40,14 @@ class BaseCog(Cog):
 
     @staticmethod
     def avatar_url(user: DBUser) -> str:
-        url = f"http://osu.{DOMAIN_NAME}/a/{user.id}"
+        url = f"http://osu.{config.DOMAIN_NAME}/a/{user.id}"
         url += f"?c={user.avatar_hash}" if user.avatar_hash else ""
         return url
 
     @staticmethod
     def thumbnail_url(beatmapset: DBBeatmapset) -> str:
         update_hash = hashlib.md5(f'{beatmapset.last_update}'.encode()).hexdigest()
-        url = f"http://osu.{DOMAIN_NAME}/mt/{beatmapset.id}"
+        url = f"http://osu.{config.DOMAIN_NAME}/mt/{beatmapset.id}"
         url += f"?c={update_hash}"
         return url
 

@@ -3,10 +3,10 @@ from discord import Embed, Interaction, Button, ButtonStyle
 from discord.ext.commands import Bot
 from discord.ui import View, button
 from discord.ext import commands
-from config import DOMAIN_NAME
 
 from app.common.constants import BeatmapGenre, BeatmapLanguage, BeatmapStatus
 from app.common.database.repositories import beatmapsets
+from app.common.config import config_instance as config
 from app.common.database.objects import DBBeatmapset
 from app.cog import BaseCog
 
@@ -39,7 +39,7 @@ class Search(BaseCog):
 
     @classmethod
     def create_embed(cls, beatmapset: DBBeatmapset) -> Embed:
-        embed = Embed(title=beatmapset.full_name, url=f"http://osu.{DOMAIN_NAME}/s/{beatmapset.id}", description="")
+        embed = Embed(title=beatmapset.full_name, url=f"http://osu.{config.DOMAIN_NAME}/s/{beatmapset.id}", description="")
         embed.set_thumbnail(url=cls.thumbnail_url(beatmapset))
         embed.add_field(name="Title", value=beatmapset.title)
         embed.add_field(name="Artist", value=beatmapset.artist)

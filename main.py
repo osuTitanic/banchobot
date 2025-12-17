@@ -1,8 +1,8 @@
 
 from app.common.logging import Console, File
+from app.session import config
 
 import logging
-import config
 import app
 
 logging.basicConfig(
@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 
 def main():
-    if not config.ENABLE_DISCORD_BOT or not config.BOT_TOKEN:
+    if not config.ENABLE_DISCORD_BOT or not config.DISCORD_BOT_TOKEN:
         logging.warning("BanchoBot is disabled, exiting...")
         exit(0)
 

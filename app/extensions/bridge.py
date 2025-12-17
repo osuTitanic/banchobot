@@ -1,4 +1,5 @@
 
+from app.common.config import config_instance as config
 from app.common.database.repositories import messages
 from app.common.database.objects import DBUser
 from app.common.constants.regexes import *
@@ -7,7 +8,6 @@ from discord.ext.commands import Cog, Bot
 from app.cog import BaseCog
 
 import discord
-import config
 
 class BanchoChatBridge(BaseCog):
     @Cog.listener()

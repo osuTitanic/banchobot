@@ -2,8 +2,8 @@
 from rosu_pp_py import Performance, Beatmap, PerformanceAttributes
 from discord import app_commands, Interaction, Embed
 from discord.ext.commands import Bot
-from config import DOMAIN_NAME
 
+from app.common.config import config_instance as config
 from app.common.database.repositories import beatmaps
 from app.common.database.objects import DBBeatmap
 from app.common.helpers import performance
@@ -70,7 +70,7 @@ class SimulateScore(BaseCog):
     ) -> Embed:
         embed = Embed(
             title=beatmap.full_name,
-            url=f"http://osu.{DOMAIN_NAME}/b/{beatmap.id}",
+            url=f"http://osu.{config.DOMAIN_NAME}/b/{beatmap.id}",
             description=(
                 f"**PP:** {result.pp:.2f}\n"
                 f"**Stars:** {result.difficulty.stars:.2f}★\n" +

@@ -3,7 +3,6 @@ from discord.ext.commands import *
 from app.extensions import *
 
 import discord
-import config
 import app
 
 class BanchoBot(Bot):
@@ -38,5 +37,5 @@ def run():
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
-    app.session.bot = BanchoBot(config.BOT_PREFIX, intents=intents, help_command=None)
-    app.session.bot.run(config.BOT_TOKEN, log_handler=None)
+    app.session.bot = BanchoBot(app.session.config.DISCORD_BOT_PREFIX, intents=intents, help_command=None)
+    app.session.bot.run(app.session.config.DISCORD_BOT_TOKEN, log_handler=None)

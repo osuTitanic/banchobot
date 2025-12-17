@@ -1,4 +1,5 @@
 
+from app.common.config import config_instance as config
 from app.common.database.objects import DBScore, DBUser
 from app.common.database.repositories import scores
 from app.common.constants import Mods, GameMode
@@ -8,9 +9,6 @@ from discord.ext import commands
 from discord import Color, Embed
 from app.cog import BaseCog
 from typing import List
-
-import config
-import app
 
 class TopScores(BaseCog):
     @commands.hybrid_command("top", description="Display the top plays of you or another player", aliases=["scores", "best"])

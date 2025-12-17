@@ -1,17 +1,16 @@
 
-from rosu_pp_py import DifficultyAttributes
+from app.common.config import config_instance as config
 from app.common.database.objects import DBScore, DBUser
 from app.common.database.repositories import scores
 from app.common.constants import Mods, GameMode
 from app.common.helpers import performance
+from app.cog import BaseCog
+
+from rosu_pp_py import DifficultyAttributes
 from discord.ext.commands import Bot
 from discord.ext import commands
 from discord import Color, Embed
-from app.cog import BaseCog
 from typing import List
-
-import config
-import app
 
 class RecentScore(BaseCog):
     @commands.hybrid_command("recent", description="Display the last score of another player or yourself", aliases=["r", "rs", "last"])

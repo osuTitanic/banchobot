@@ -1,4 +1,5 @@
 
+from app.common.config import config_instance as config
 from app.common.database.objects import DBUser, DBStats
 from app.common.database.repositories import users
 from app.common.cache import leaderboards
@@ -7,9 +8,6 @@ from discord.ext.commands import Bot
 from discord import Embed, Color
 from discord.ext import commands
 from app.cog import BaseCog
-
-import config
-import app
 
 class Profile(BaseCog):
     @commands.hybrid_command("profile", description="Display the profile of you or another person", aliases=["stats", "show"])
