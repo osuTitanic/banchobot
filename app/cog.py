@@ -140,7 +140,7 @@ class BaseCog(Cog):
             )
             return False
 
-        if not user.is_administrator:
+        if not user.is_admin:
             await interaction.response.send_message(
                 "You do not have permission to use this command.",
                 ephemeral=True
