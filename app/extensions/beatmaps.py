@@ -19,7 +19,7 @@ ALLOWED_ROLE_IDS = {config.DISCORD_STAFF_ROLE_ID, config.DISCORD_BAT_ROLE_ID}
 
 def role_check(interaction: Interaction) -> bool:
     if not isinstance(interaction.user, Member):
-        return True
+        return False
 
     return any(role.id in ALLOWED_ROLE_IDS for role in interaction.user.roles)
 
