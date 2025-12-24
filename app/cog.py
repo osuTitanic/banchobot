@@ -1,6 +1,7 @@
 
 from ossapi.ossapiv2_async import OssapiAsync
 from discord.ext.commands import Cog
+from discord import Interaction
 from typing import Callable
 
 from app.common.database.objects import DBUser, DBBeatmapset
@@ -113,3 +114,37 @@ class BaseCog(Cog):
             permissions.has_permission,
             permission, user_id
         )
+        
+    async def ensure_moderator(self, interaction: Interaction) -> bool:
+        if not (user := await self.resolve_user(interaction.user.id)):
+            await interaction.response.send_message(
+                "You are not registered in the database.",
+                ephemeral=True
+            )
+            return False
+
+        if not user.is_moderator:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
+            return False
+
+        return True
+    
+    async def ensure_administrator(self, interaction: Interaction) -> bool:
+        if not (user := await self.resolve_user(interaction.user.id)):
+            await interaction.response.send_message(
+                "You are not registered in the database.",
+                ephemeral=True
+            )
+            return False
+
+        if not user.is_administrator:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
+            return False
+
+        return True

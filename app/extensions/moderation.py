@@ -20,6 +20,9 @@ class Moderation(BaseCog):
         identifier: str,
         reason: str = "No reason."
     ) -> None:
+        if not await self.ensure_moderator(interaction):
+            return
+
         if not (user := await self.resolve_user_from_identifier(identifier)):
             return await interaction.response.send_message(
                 f"I could not find that user: `{identifier}`.",
@@ -50,6 +53,9 @@ class Moderation(BaseCog):
         identifier: str,
         restore_scores: bool = True
     ) -> None:
+        if not await self.ensure_moderator(interaction):
+            return
+        
         if not (user := await self.resolve_user_from_identifier(identifier)):
             return await interaction.response.send_message(
                 f"I could not find that user: `{identifier}`.",
@@ -80,6 +86,9 @@ class Moderation(BaseCog):
         identifier: str,
         new_name: str
     ) -> None:
+        if not await self.ensure_moderator(interaction):
+            return
+
         new_name = new_name.strip()
         safe_name = new_name.lower().replace(" ", "_")
 
@@ -164,6 +173,9 @@ class Moderation(BaseCog):
         identifier: str,
         group: str
     ) -> None:
+        if not await self.ensure_administrator(interaction):
+            return
+
         if not (user := await self.resolve_user_from_identifier(identifier)):
             return await interaction.response.send_message(
                 f"I could not find that user: `{identifier}`.",
@@ -202,6 +214,9 @@ class Moderation(BaseCog):
         identifier: str,
         group: str
     ) -> None:
+        if not await self.ensure_administrator(interaction):
+            return
+
         if not (user := await self.resolve_user_from_identifier(identifier)):
             return await interaction.response.send_message(
                 f"I could not find that user: `{identifier}`.",
