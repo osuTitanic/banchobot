@@ -7,7 +7,7 @@ from app import beatmaps as beatmap_helper
 from app.extensions.types import *
 from app.cog import BaseCog
 
-from discord import app_commands, Interaction, Attachment
+from discord import app_commands, Interaction, Attachment, Member
 from discord.ext.commands import Bot
 from datetime import datetime
 
@@ -18,8 +18,8 @@ import io
 ALLOWED_ROLE_IDS = {config.DISCORD_STAFF_ROLE_ID, config.DISCORD_BAT_ROLE_ID}
 
 def role_check(interaction: Interaction) -> bool:
-    if interaction.user.guild is None:
-        return False
+    if not isinstance(interaction.user, Member):
+        return True
 
     return any(role.id in ALLOWED_ROLE_IDS for role in interaction.user.roles)
 
