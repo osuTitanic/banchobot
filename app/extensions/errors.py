@@ -18,6 +18,9 @@ class ErrorHandler(BaseCog):
         elif isinstance(error, MissingPermissions):
             return await ctx.send("You don't have permission to use this command.")
 
+        elif isinstance(error, CheckFailure):
+            return await ctx.send("You don't have permission to use this command.")
+
         elif isinstance(error, CommandOnCooldown):
             return await ctx.send(
                 f"This command is on cooldown. Try again in "
