@@ -20,7 +20,11 @@ class Moderation(BaseCog):
         identifier: str,
         reason: str = "No reason."
     ) -> None:
-        if not await self.ensure_moderator(interaction):
+        if not await self.ensure_permission("users.moderation.restrict", interaction):
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
             return
 
         if not (user := await self.resolve_user_from_identifier(identifier)):
@@ -53,7 +57,11 @@ class Moderation(BaseCog):
         identifier: str,
         restore_scores: bool = True
     ) -> None:
-        if not await self.ensure_moderator(interaction):
+        if not await self.ensure_permission("users.moderation.unrestrict", interaction):
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
             return
         
         if not (user := await self.resolve_user_from_identifier(identifier)):
@@ -86,7 +94,11 @@ class Moderation(BaseCog):
         identifier: str,
         new_name: str
     ) -> None:
-        if not await self.ensure_moderator(interaction):
+        if not await self.ensure_permission("users.moderation.rename", interaction):
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
             return
 
         new_name = new_name.strip()
@@ -173,7 +185,11 @@ class Moderation(BaseCog):
         identifier: str,
         group: str
     ) -> None:
-        if not await self.ensure_administrator(interaction):
+        if not await self.ensure_permission("groups.add", interaction):
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
             return
 
         if not (user := await self.resolve_user_from_identifier(identifier)):
@@ -214,7 +230,11 @@ class Moderation(BaseCog):
         identifier: str,
         group: str
     ) -> None:
-        if not await self.ensure_administrator(interaction):
+        if not await self.ensure_permission("groups.remove", interaction):
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
             return
 
         if not (user := await self.resolve_user_from_identifier(identifier)):

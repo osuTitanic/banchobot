@@ -114,37 +114,12 @@ class BaseCog(Cog):
             permissions.has_permission,
             permission, user_id
         )
-        
-    async def ensure_moderator(self, interaction: Interaction) -> bool:
+
+    async def ensure_permission(self, permission: str, interaction: Interaction) -> bool:
         if not (user := await self.resolve_user(interaction.user.id)):
-            await interaction.response.send_message(
-                "You are not registered in the database.",
-                ephemeral=True
-            )
             return False
 
-        if not user.is_moderator:
-            await interaction.response.send_message(
-                "You do not have permission to use this command.",
-                ephemeral=True
-            )
-            return False
-
-        return True
-    
-    async def ensure_administrator(self, interaction: Interaction) -> bool:
-        if not (user := await self.resolve_user(interaction.user.id)):
-            await interaction.response.send_message(
-                "You are not registered in the database.",
-                ephemeral=True
-            )
-            return False
-
-        if not user.is_admin:
-            await interaction.response.send_message(
-                "You do not have permission to use this command.",
-                ephemeral=True
-            )
+        if not await self.has_permission(user.id, permission):
             return False
 
         return True
