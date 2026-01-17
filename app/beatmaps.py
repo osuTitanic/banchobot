@@ -3,6 +3,7 @@ from app.common.database.objects import DBBeatmapset, DBBeatmap
 from app.common.database.repositories import wrapper
 from app.common.database.repositories import *
 from typing import Dict, Tuple, Union, List
+from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy.orm import Session
 from ossapi import Beatmapset
 
@@ -188,10 +189,13 @@ def fix_beatmap_decimal_values(beatmapset: DBBeatmapset, session: Session = ...)
             
             if isinstance(value, str):
                 continue
+            
+            value_decimal = Decimal(value)
+            rounded_value = value_decimal.quantize(Decimal(1), rounding=ROUND_HALF_UP)
 
             # Update value
-            beatmap_updates[short_key] = round(value) # Database
-            beatmap_dict['Difficulty'][key] = round(value) # File
+            beatmap_updates[short_key] = int(rounded_value) # Database
+            beatmap_dict['Difficulty'][key] = int(rounded_value) # File
 
         if not beatmap_updates:
             continue
