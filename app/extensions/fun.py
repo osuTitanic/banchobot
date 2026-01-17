@@ -9,7 +9,7 @@ import re
 class NeverKillYourself(BaseCog):
     def __init__(self) -> None:
         super().__init__()
-        self.url = "https://titanic.fra1.cdn.digitaloceanspaces.com/public/videos/kms.mp4"
+        self.url = "https://cdn.titanic.sh/public/videos/kms.mp4"
         self.trigger = [re.compile(r"\bkms\b"), re.compile(r"\bkill(ing)? myself\b")]
         self.last_event = time.time() - 60*5
 
