@@ -10,7 +10,7 @@ class NeverKillYourself(BaseCog):
     def __init__(self) -> None:
         super().__init__()
         self.url = "https://cdn.titanic.sh/public/videos/kms.mp4"
-        self.trigger = [re.compile(r"\bkms\b"), re.compile(r"\bkill(ing)? myself\b")]
+        self.trigger = [re.compile(r"\bkms\b"), re.compile(r"\bkill(ing)? myself\b"), re.compile(r"\bkill(ing)? me\b")]
         self.last_event = time.time() - 60*5
 
     @Cog.listener()
