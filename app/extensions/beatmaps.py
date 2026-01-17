@@ -13,6 +13,7 @@ from datetime import datetime
 
 import zipfile
 import hashlib
+import stat
 import io
 
 ALLOWED_ROLE_IDS = {config.DISCORD_STAFF_ROLE_ID, config.DISCORD_BAT_ROLE_ID}
@@ -408,11 +409,17 @@ class BeatmapManagement(BaseCog):
                     if osu_file is None:
                         continue
 
-                    osz_write.writestr(beatmap.filename, osu_file)
+                    zip_info = zipfile.ZipInfo(filename=beatmap.filename)
+                    zip_info.compress_type = zipfile.ZIP_DEFLATED
+                    zip_info.date_time = beatmap.last_update.timetuple()[:6]
+                    zip_info.external_attr = (stat.S_IFREG | 0o664) << 16
+                    osz_write.writestr(zip_info, osu_file)
 
                 # Copy over other files (backgrounds, audio, etc...)
                 for item in osz_read.infolist():
                     if not item.filename.endswith('.osu'):
+                        item.compress_type = zipfile.ZIP_DEFLATED
+                        item.external_attr = (stat.S_IFREG | 0o664) << 16
                         osz_write.writestr(item, osz_read.read(item.filename))
 
         await self.run_async(
