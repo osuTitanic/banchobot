@@ -15,6 +15,8 @@ import zipfile
 import hashlib
 import stat
 import io
+import math
+from typing import List
 
 ALLOWED_ROLE_IDS = {config.DISCORD_STAFF_ROLE_ID, config.DISCORD_BAT_ROLE_ID}
 
@@ -23,6 +25,111 @@ def role_check(interaction: Interaction) -> bool:
         return False
 
     return any(role.id in ALLOWED_ROLE_IDS for role in interaction.user.roles)
+
+class PerfectCurveConverter:
+    _CIRCLE_PRESETS = [
+        (0.4993379862754501, [(1.0, 0.0), (1.0, 0.2549893626632736), (0.8778997558480327, 0.47884446188920726)]),
+        (1.7579419829169447, [(1.0, 0.0), (1.0, 0.6263026), (0.42931178, 1.0990661), (-0.18605515, 0.9825393)]),
+        (3.1385246920140215, [(1.0, 0.0), (1.0, 0.87084764), (0.002304826, 1.5033062), (-0.9973236, 0.8739115), (-0.9999953, 0.0030679568)]),
+        (5.69720464620727, [(1.0, 0.0), (1.0, 1.4137783), (-1.4305235, 2.0779421), (-2.3410065, -0.94017583), (0.05132711, -1.7309346), (0.8331702, -0.5530167)]),
+        (2 * math.pi, [(1.0, 0.0), (1.0, 1.2447058), (-0.8526471, 2.118367), (-2.6211002, 7.854936e-06), (-0.8526448, -2.118357), (1.0, -1.2447058), (1.0, -2.4492937e-16)])
+    ]
+
+    def process(self, content: str) -> str:
+        lines = content.splitlines()
+        new_lines = []
+        in_hitobjects = False
+        
+        for line in lines:
+            if line.strip() == '[HitObjects]':
+                in_hitobjects = True
+                new_lines.append(line)
+                continue
+                
+            if not in_hitobjects or not line.strip():
+                new_lines.append(line)
+                continue
+                
+            parts = line.split(',')
+            if len(parts) < 6:
+                new_lines.append(line)
+                continue
+                
+            try:
+                obj_type = int(parts[3])
+                if not (obj_type & 2):
+                    new_lines.append(line)
+                    continue
+                    
+                slider_def = parts[5]
+                if not slider_def.startswith('P|'):
+                    new_lines.append(line)
+                    continue
+                    
+                curve_parts = slider_def.split('|')
+                if len(curve_parts) != 3:
+                    new_lines.append(line)
+                    continue
+                
+                p_start = (float(parts[0]), float(parts[1]))
+                mid_coords = curve_parts[1].split(':')
+                p_mid = (float(mid_coords[0]), float(mid_coords[1]))
+                end_coords = curve_parts[2].split(':')
+                p_end = (float(end_coords[0]), float(end_coords[1]))
+                
+                if p_start == p_mid or p_mid == p_end:
+                    new_lines.append(line)
+                    continue
+                    
+                arc = self._calculate_circle_properties(p_start, p_mid, p_end)
+                if not arc:
+                    new_lines.append(line)
+                    continue
+                    
+                bezier_points = self._approximate_circle_with_bezier(arc)
+                new_def = "B|" + "|".join([f"{round(p[0])}:{round(p[1])}" for p in bezier_points])
+                parts[5] = new_def
+                new_lines.append(','.join(parts))
+            except ValueError:
+                new_lines.append(line)
+                
+        return '\n'.join(new_lines)
+
+    def _vec_sub(self, v1, v2): return (v1[0] - v2[0], v1[1] - v2[1])
+    def _vec_add(self, v1, v2): return (v1[0] + v2[0], v1[1] + v2[1])
+    def _vec_scale(self, v, s): return (v[0] * s, v[1] * s)
+    def _vec_len_sq(self, v): return v[0]**2 + v[1]**2
+    def _vec_len(self, v): return math.sqrt(self._vec_len_sq(v))
+    def _vec_dot(self, v1, v2): return v1[0] * v2[0] + v1[1] * v2[1]
+
+    def _calculate_circle_properties(self, p_a, p_b, p_c):
+        d = 2 * (p_a[0] * (p_b[1] - p_c[1]) + p_b[0] * (p_c[1] - p_a[1]) + p_c[0] * (p_a[1] - p_b[1]))
+        if abs(d) < 1e-10: return None
+        a_sq = self._vec_len_sq(p_a); b_sq = self._vec_len_sq(p_b); c_sq = self._vec_len_sq(p_c)
+        center_x = (a_sq * (p_b[1] - p_c[1]) + b_sq * (p_c[1] - p_a[1]) + c_sq * (p_a[1] - p_b[1])) / d
+        center_y = (a_sq * (p_c[0] - p_b[0]) + b_sq * (p_a[0] - p_c[0]) + c_sq * (p_b[0] - p_a[0])) / d
+        center = (center_x, center_y)
+        d_a = self._vec_sub(p_a, center); d_c = self._vec_sub(p_c, center)
+        radius = self._vec_len(d_a)
+        theta_start = math.atan2(d_a[1], d_a[0]); theta_end = math.atan2(d_c[1], d_c[0])
+        while theta_end < theta_start: theta_end += 2 * math.pi
+        direction = 1; theta_range = theta_end - theta_start
+        ortho_ac = (p_c[1] - p_a[1], p_a[0] - p_c[0])
+        if self._vec_dot(ortho_ac, self._vec_sub(p_b, p_a)) < 0: direction = -1; theta_range = 2 * math.pi - theta_range
+        return {'center': center, 'radius': radius, 'theta_start': theta_start, 'theta_range': theta_range, 'direction': direction}
+
+    def _approximate_circle_with_bezier(self, arc):
+        preset = next((p for p in self._CIRCLE_PRESETS if p[0] >= arc['theta_range']), self._CIRCLE_PRESETS[-1])
+        bezier_arc = list(preset[1]); preset_arc_length = preset[0]; n = len(bezier_arc) - 1; tf = arc['theta_range'] / preset_arc_length
+        for j in range(n):
+            for i in range(n, j, -1): bezier_arc[i] = self._vec_add(self._vec_scale(bezier_arc[i], tf), self._vec_scale(bezier_arc[i - 1], 1 - tf))
+        final_points = []; cos_start = math.cos(arc['theta_start']); sin_start = math.sin(arc['theta_start'])
+        for point in bezier_arc:
+            p = self._vec_scale(point, arc['radius'])
+            if arc['direction'] < 0: p = (p[0], -p[1])
+            rotated_p = (p[0] * cos_start - p[1] * sin_start, p[0] * sin_start + p[1] * cos_start)
+            final_points.append(self._vec_add(rotated_p, arc['center']))
+        return final_points
 
 class BeatmapManagement(BaseCog):
     @app_commands.command(name="addset", description="Add a beatmapset from bancho to Titanic!")
@@ -33,6 +140,7 @@ class BeatmapManagement(BaseCog):
         beatmapset_id: int,
         round_decimal_values: bool = True,
         fix_leadin_times: bool = False,
+        fix_perfect_curves: bool = False,
         move_to_pending: bool = True
     ) -> None:
         if not self.ossapi:
@@ -104,6 +212,13 @@ class BeatmapManagement(BaseCog):
                 database_set
             )
             followup += f"\n(Fixed lead-in times for {len(updates)}/{len(database_set.beatmaps)} beatmaps)"
+
+        if fix_perfect_curves:
+            updates = await self.run_async(
+                self.fix_beatmapset_perfect_curves,
+                database_set
+            )
+            followup += f"\n(Fixed perfect curves for {len(updates)}/{len(database_set.beatmaps)} beatmaps)"
 
         # TODO: Discord webhook updates
         return await interaction.followup.send(followup)
@@ -431,6 +546,25 @@ class BeatmapManagement(BaseCog):
             f"Download it [here](http://osu.{config.DOMAIN_NAME}/d/{beatmapset.id}). "
             f"({len(beatmapset.beatmaps)} beatmaps updated)"
         )
+
+    def fix_beatmapset_perfect_curves(self, beatmapset: DBBeatmapset) -> List[int]:
+        updated_maps = []
+        converter = PerfectCurveConverter()
+        
+        for beatmap in beatmapset.beatmaps:
+            content = self.storage.get_beatmap(beatmap.id)
+            if not content:
+                continue
+            
+            try:
+                content_str = content.decode('utf-8')
+                new_content_str = converter.process(content_str)
+                if new_content_str != content_str:
+                    self.storage.upload_beatmap_file(beatmap.id, new_content_str.encode('utf-8'))
+                    updated_maps.append(beatmap.id)
+            except Exception as e:
+                self.logger.error(f"Failed to process perfect curves for map {beatmap.id}: {e}")
+        return updated_maps
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
         with self.database.managed_session() as session:
