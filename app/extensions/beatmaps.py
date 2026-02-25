@@ -547,6 +547,7 @@ class BeatmapManagement(BaseCog):
             f"({len(beatmapset.beatmaps)} beatmaps updated)"
         )
 
+# TODO: Perfect curve fixes (hopefully)
     def fix_beatmapset_perfect_curves(self, beatmapset: DBBeatmapset) -> List[int]:
         updated_maps = []
         converter = PerfectCurveConverter()
