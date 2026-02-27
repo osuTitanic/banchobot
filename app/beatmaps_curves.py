@@ -18,9 +18,9 @@ CirclePresets = [
 def process_perfect_curves(content: str) -> str | None:
     beatmap = Beatmap.parse(content)
     hit_objects = list(beatmap.hit_objects(stacking=False))
-    updated_indexes: dict[int, str] = {}
+    has_updates = False
 
-    for index, hit_object in enumerate(hit_objects):
+    for hit_object in hit_objects:
         if not isinstance(hit_object, Slider):
             continue
 
@@ -50,40 +50,12 @@ def process_perfect_curves(content: str) -> str | None:
             bezier_positions,
             hit_object.length,
         )
-        updated_indexes[index] = hit_object.pack()
+        has_updates = True
 
-    if not updated_indexes:
+    if not has_updates:
         return None
 
-    # TODO: Directly modify the hit objects instead of replacing lines
-    return replace_updated_hitobject_lines(content, updated_indexes)
-
-def replace_updated_hitobject_lines(content: str, updated_indexes: dict[int, str]) -> str:
-    lines = content.splitlines()
-    new_lines: list[str] = []
-    in_hitobjects = False
-    hitobject_index = 0
-
-    for line in lines:
-        stripped = line.strip()
-
-        if stripped == "[HitObjects]":
-            in_hitobjects = True
-            new_lines.append(line)
-            continue
-
-        if not in_hitobjects:
-            new_lines.append(line)
-            continue
-
-        if not stripped or stripped.startswith("//"):
-            new_lines.append(line)
-            continue
-
-        new_lines.append(updated_indexes.get(hitobject_index, line))
-        hitobject_index += 1
-
-    return "\n".join(new_lines)
+    return beatmap.pack()
 
 def calculate_circle_properties(
     point_a: Vector2D,
