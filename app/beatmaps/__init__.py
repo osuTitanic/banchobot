@@ -1,5 +1,5 @@
 
-from .common import pack_beatmap, parse_beatmap
+from .common import pack_beatmap, parse_beatmap, delete_beatmapset, delete_beatmap
 from .curves import convert_perfect_curves
 from .decimals import fix_beatmap_decimal_values
 from .leadin import fix_beatmap_lead_in

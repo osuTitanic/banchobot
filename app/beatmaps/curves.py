@@ -15,8 +15,8 @@ CirclePresets = [
     (2 * math.pi, [(1.0, 0.0), (1.0, 1.2447058), (-0.8526471, 2.118367), (-2.6211002, 7.854936e-06), (-0.8526448, -2.118357), (1.0, -1.2447058), (1.0, -2.4492937e-16)]),
 ]
 
-def convert_perfect_curves(content: str) -> str | None:
-    beatmap = Beatmap.parse(content)
+def convert_perfect_curves(beatmap: Beatmap) -> bool:
+    """Convert all 'P' curves on a beatmap to 'B' curves in-place."""
     has_updates = False
 
     for hit_object in beatmap.hit_objects(stacking=False):
@@ -51,10 +51,7 @@ def convert_perfect_curves(content: str) -> str | None:
         )
         has_updates = True
 
-    if not has_updates:
-        return None
-
-    return beatmap.pack()
+    return has_updates
 
 def calculate_circle_properties(
     point_a: Vector2D,

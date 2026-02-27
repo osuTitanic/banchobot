@@ -4,18 +4,17 @@ from app.common.database.repositories import wrapper
 from app.common.database.repositories import *
 from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy.orm import Session
-from typing import List, Tuple
 from slider import Beatmap
-
-import hashlib
 import app
 
 def parse_beatmap(content: bytes, beatmap_id: int) -> Beatmap | None:
     try:
-        return Beatmap.parse(content.decode("utf-8-sig"))
+        decoded_content = content.decode("utf-8-sig")
+        return Beatmap.parse(decoded_content)
     except Exception as error:
         app.session.logger.warning(
-            f"Invalid beatmap file for '{beatmap_id}': {error}"
+            f"Invalid beatmap file for '{beatmap_id}': {error}",
+            exc_info=True
         )
         return None
 
@@ -57,33 +56,3 @@ def delete_beatmap(beatmap: DBBeatmap, session: Session = ...) -> None:
     ratings.delete_by_beatmap_hash(beatmap.md5, session=session)
     plays.delete_by_beatmap_id(beatmap.id, session=session)
     beatmaps.delete_by_id(beatmap.id, session=session)
-
-@wrapper.session_wrapper
-def update_slider_multiplier(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
-    """Read the slider multiplier from each beatmap file and update the value in the database"""
-    updated_beatmaps = list()
-
-    for beatmap in beatmapset.beatmaps:
-        beatmap_file = app.session.storage.get_beatmap(beatmap.id)
-
-        if not beatmap_file:
-            continue
-
-        parsed_beatmap = parse_beatmap(beatmap_file, beatmap.id)
-
-        if parsed_beatmap is None:
-            continue
-
-        slider_multiplier = float(parsed_beatmap.slider_multiplier)
-
-        if beatmap.slider_multiplier == slider_multiplier:
-            continue
-
-        beatmaps.update(
-            beatmap.id,
-            {'slider_multiplier': slider_multiplier},
-            session=session
-        )
-        updated_beatmaps.append(beatmap)
-
-    return updated_beatmaps

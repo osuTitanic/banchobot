@@ -64,17 +64,67 @@ class BeatmapManagement(BaseCog):
             beatmap_helper.store_ossapi_beatmapset,
             ossapi_set
         )
-
         filesize, filesize_novideo = await self.run_async(
             beatmap_helper.fetch_osz_filesizes,
             database_set.id
         )
-        
-        # Update slider multiplier values inside database
-        await self.run_async(
-            beatmap_helper.update_slider_multiplier,
-            database_set
-        )
+
+        decimal_updates = 0
+        leadin_updates = 0
+        curve_updates = 0
+
+        for beatmap in database_set.beatmaps:
+            content = await self.run_async(
+                self.storage.get_beatmap,
+                beatmap.id
+            )
+
+            if not content:
+                continue
+
+            parsed_beatmap = beatmap_helper.parse_beatmap(content, beatmap.id)
+
+            if parsed_beatmap is None:
+                continue
+
+            beatmap_updates = {}
+            file_updated = False
+
+            if beatmap.slider_multiplier != parsed_beatmap.slider_multiplier:
+                # Slider multiplier changed from db to api
+                beatmap_updates['slider_multiplier'] = parsed_beatmap.slider_multiplier
+
+            if round_decimal_values and beatmap_helper.fix_beatmap_decimal_values(parsed_beatmap):
+                beatmap_updates['od'] = int(parsed_beatmap.overall_difficulty)
+                beatmap_updates['ar'] = int(parsed_beatmap.approach_rate)
+                beatmap_updates['hp'] = int(parsed_beatmap.hp_drain_rate)
+                beatmap_updates['cs'] = int(parsed_beatmap.circle_size)
+                decimal_updates += 1
+                file_updated = True
+
+            if fix_leadin_times and beatmap_helper.fix_beatmap_lead_in(parsed_beatmap):
+                leadin_updates += 1
+                file_updated = True
+
+            if fix_perfect_curves and beatmap_helper.convert_perfect_curves(parsed_beatmap):
+                curve_updates += 1
+                file_updated = True
+
+            if file_updated:
+                content_updated = beatmap_helper.pack_beatmap(parsed_beatmap)
+                beatmap_updates['md5'] = hashlib.md5(content_updated).hexdigest()
+
+                await self.run_async(
+                    self.storage.upload_beatmap_file,
+                    beatmap.id,
+                    content_updated
+                )
+
+            if beatmap_updates:
+                await self.update_beatmap(
+                    beatmap.id,
+                    beatmap_updates
+                )
 
         await self.update_beatmapset(
             database_set.id,
@@ -94,25 +144,13 @@ class BeatmapManagement(BaseCog):
         followup = f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!"
 
         if round_decimal_values:
-            updates = await self.run_async(
-                beatmap_helper.fix_beatmap_decimal_values,
-                database_set
-            )
-            followup += f"\n(Fixed {len(updates)}/{len(database_set.beatmaps)} beatmaps with decimal values)"
+            followup += f"\n(Fixed {decimal_updates}/{len(database_set.beatmaps)} beatmaps with decimal values)"
 
         if fix_leadin_times:
-            updates = await self.run_async(
-                beatmap_helper.fix_beatmap_lead_in,
-                database_set
-            )
-            followup += f"\n(Fixed lead-in times for {len(updates)}/{len(database_set.beatmaps)} beatmaps)"
+            followup += f"\n(Fixed lead-in times for {leadin_updates}/{len(database_set.beatmaps)} beatmaps)"
 
         if fix_perfect_curves:
-            updates = await self.run_async(
-                self.fix_beatmapset_perfect_curves,
-                database_set
-            )
-            followup += f"\n(Fixed perfect curves for {len(updates)}/{len(database_set.beatmaps)} beatmaps)"
+            followup += f"\n(Fixed perfect curves for {curve_updates}/{len(database_set.beatmaps)} beatmaps)"
 
         # TODO: Discord webhook updates
         return await interaction.followup.send(followup)
@@ -440,29 +478,6 @@ class BeatmapManagement(BaseCog):
             f"Download it [here](http://osu.{config.DOMAIN_NAME}/d/{beatmapset.id}). "
             f"({len(beatmapset.beatmaps)} beatmaps updated)"
         )
-
-    def fix_beatmapset_perfect_curves(self, beatmapset: DBBeatmapset) -> List[int]:
-        updated_maps = []
-
-        for beatmap in beatmapset.beatmaps:
-            content = self.storage.get_beatmap(beatmap.id)
-            if not content:
-                continue
-
-            try:
-                content_decoded = content.decode('utf-8-sig')
-                content_updated = beatmap_helper.convert_perfect_curves(content_decoded)
-            except Exception as error:
-                self.logger.error(f"Failed to process perfect curves for map {beatmap.id}: {error}")
-                continue
-
-            if content_updated is None:
-                continue
-
-            self.storage.upload_beatmap_file(beatmap.id, content_updated.encode('utf-8'))
-            updated_maps.append(beatmap.id)
-
-        return updated_maps
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
         with self.database.managed_session() as session:
