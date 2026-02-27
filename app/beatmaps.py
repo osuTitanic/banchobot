@@ -1,4 +1,5 @@
 
+from app.beatmaps_curves import process_perfect_curves
 from app.common.database.objects import DBBeatmapset, DBBeatmap
 from app.common.database.repositories import wrapper
 from app.common.database.repositories import *
