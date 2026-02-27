@@ -15,12 +15,11 @@ CirclePresets = [
     (2 * math.pi, [(1.0, 0.0), (1.0, 1.2447058), (-0.8526471, 2.118367), (-2.6211002, 7.854936e-06), (-0.8526448, -2.118357), (1.0, -1.2447058), (1.0, -2.4492937e-16)]),
 ]
 
-def process_perfect_curves(content: str) -> str | None:
+def convert_perfect_curves(content: str) -> str | None:
     beatmap = Beatmap.parse(content)
-    hit_objects = list(beatmap.hit_objects(stacking=False))
     has_updates = False
 
-    for hit_object in hit_objects:
+    for hit_object in beatmap.hit_objects(stacking=False):
         if not isinstance(hit_object, Slider):
             continue
 

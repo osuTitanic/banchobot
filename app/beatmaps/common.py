@@ -1,0 +1,89 @@
+
+from app.common.database.objects import DBBeatmapset, DBBeatmap
+from app.common.database.repositories import wrapper
+from app.common.database.repositories import *
+from decimal import Decimal, ROUND_HALF_UP
+from sqlalchemy.orm import Session
+from typing import List, Tuple
+from slider import Beatmap
+
+import hashlib
+import app
+
+def parse_beatmap(content: bytes, beatmap_id: int) -> Beatmap | None:
+    try:
+        return Beatmap.parse(content.decode("utf-8-sig"))
+    except Exception as error:
+        app.session.logger.warning(
+            f"Invalid beatmap file for '{beatmap_id}': {error}"
+        )
+        return None
+
+def pack_beatmap(beatmap: Beatmap) -> bytes:
+    return beatmap.pack().encode("utf-8")
+
+def round_half_up(value: float) -> int:
+    return int(Decimal(str(value)).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+@wrapper.session_wrapper
+def delete_beatmapset(beatmapset: DBBeatmapset, session: Session = ...) -> None:
+    app.session.storage.remove_osz2(beatmapset.id)
+    app.session.storage.remove_osz(beatmapset.id)
+    app.session.storage.remove_background(beatmapset.id)
+    app.session.storage.remove_mp3(beatmapset.id)
+
+    for beatmap in beatmapset.beatmaps:
+        app.session.storage.remove_beatmap_file(beatmap.id)
+    
+    # Delete all related data
+    for beatmap in beatmapset.beatmaps:
+        collaborations.delete_requests_by_beatmap(beatmap.id, session=session)
+        collaborations.delete_by_beatmap(beatmap.id, session=session)
+
+    modding.delete_by_set_id(beatmapset.id, session=session)
+    ratings.delete_by_set_id(beatmapset.id, session=session)
+    plays.delete_by_set_id(beatmapset.id, session=session)
+    nominations.delete_all(beatmapset.id, session=session)
+    favourites.delete_all(beatmapset.id, session=session)
+    beatmaps.delete_by_set_id(beatmapset.id, session=session)
+    beatmapsets.delete_by_id(beatmapset.id, session=session)
+
+@wrapper.session_wrapper
+def delete_beatmap(beatmap: DBBeatmap, session: Session = ...) -> None:
+    app.session.storage.remove_beatmap_file(beatmap.id)
+
+    collaborations.delete_requests_by_beatmap(beatmap.id, session=session)
+    collaborations.delete_by_beatmap(beatmap.id, session=session)
+    ratings.delete_by_beatmap_hash(beatmap.md5, session=session)
+    plays.delete_by_beatmap_id(beatmap.id, session=session)
+    beatmaps.delete_by_id(beatmap.id, session=session)
+
+@wrapper.session_wrapper
+def update_slider_multiplier(beatmapset: DBBeatmapset, session: Session = ...) -> List[DBBeatmap]:
+    """Read the slider multiplier from each beatmap file and update the value in the database"""
+    updated_beatmaps = list()
+
+    for beatmap in beatmapset.beatmaps:
+        beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+        if not beatmap_file:
+            continue
+
+        parsed_beatmap = parse_beatmap(beatmap_file, beatmap.id)
+
+        if parsed_beatmap is None:
+            continue
+
+        slider_multiplier = float(parsed_beatmap.slider_multiplier)
+
+        if beatmap.slider_multiplier == slider_multiplier:
+            continue
+
+        beatmaps.update(
+            beatmap.id,
+            {'slider_multiplier': slider_multiplier},
+            session=session
+        )
+        updated_beatmaps.append(beatmap)
+
+    return updated_beatmaps

@@ -451,7 +451,7 @@ class BeatmapManagement(BaseCog):
 
             try:
                 content_decoded = content.decode('utf-8-sig')
-                content_updated = beatmap_helper.process_perfect_curves(content_decoded)
+                content_updated = beatmap_helper.convert_perfect_curves(content_decoded)
             except Exception as error:
                 self.logger.error(f"Failed to process perfect curves for map {beatmap.id}: {error}")
                 continue
