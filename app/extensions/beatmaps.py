@@ -10,6 +10,7 @@ from app.cog import BaseCog
 from discord import app_commands, Interaction, Attachment, Member
 from discord.ext.commands import Bot
 from datetime import datetime
+from typing import List
 
 import zipfile
 import hashlib
@@ -33,6 +34,7 @@ class BeatmapManagement(BaseCog):
         beatmapset_id: int,
         round_decimal_values: bool = True,
         fix_leadin_times: bool = False,
+        fix_perfect_curves: bool = False,
         move_to_pending: bool = True
     ) -> None:
         if not self.ossapi:
@@ -104,6 +106,13 @@ class BeatmapManagement(BaseCog):
                 database_set
             )
             followup += f"\n(Fixed lead-in times for {len(updates)}/{len(database_set.beatmaps)} beatmaps)"
+
+        if fix_perfect_curves:
+            updates = await self.run_async(
+                self.fix_beatmapset_perfect_curves,
+                database_set
+            )
+            followup += f"\n(Fixed perfect curves for {len(updates)}/{len(database_set.beatmaps)} beatmaps)"
 
         # TODO: Discord webhook updates
         return await interaction.followup.send(followup)
@@ -431,6 +440,29 @@ class BeatmapManagement(BaseCog):
             f"Download it [here](http://osu.{config.DOMAIN_NAME}/d/{beatmapset.id}). "
             f"({len(beatmapset.beatmaps)} beatmaps updated)"
         )
+
+    def fix_beatmapset_perfect_curves(self, beatmapset: DBBeatmapset) -> List[int]:
+        updated_maps = []
+
+        for beatmap in beatmapset.beatmaps:
+            content = self.storage.get_beatmap(beatmap.id)
+            if not content:
+                continue
+
+            try:
+                content_decoded = content.decode('utf-8-sig')
+                content_updated = beatmap_helper.process_perfect_curves(content_decoded)
+            except Exception as error:
+                self.logger.error(f"Failed to process perfect curves for map {beatmap.id}: {error}")
+                continue
+
+            if content_updated is None:
+                continue
+
+            self.storage.upload_beatmap_file(beatmap.id, content_updated.encode('utf-8'))
+            updated_maps.append(beatmap.id)
+
+        return updated_maps
 
     async def fetch_beatmapset(self, beatmapset_id: int) -> DBBeatmapset | None:
         with self.database.managed_session() as session:
