@@ -87,8 +87,8 @@ class SimulateScore(BaseCog):
 
     def create_embed(
         self,
-        result: float,
-        difficulty: performance.ppv2.DifficultyAttributes,
+        pp: float,
+        result: performance.ppv2.DifficultyAttributes,
         beatmap: DBBeatmap,
         mods: str
     ) -> Embed:
@@ -96,13 +96,21 @@ class SimulateScore(BaseCog):
             title=beatmap.full_name,
             url=f"http://osu.{config.DOMAIN_NAME}/b/{beatmap.id}",
             description=(
-                f"**PP:** {result:.2f}\n"
-                f"**Stars:** {difficulty.star_rating:.2f}★\n" +
+                f"**PP:** {pp:.2f}\n"
+                f"**Stars:** {result.star_rating:.2f}★\n" +
                 (f"**Mods:** +{mods}" if mods != "NM" else "")
             )
         )
         embed.set_footer(text="Simulated Score")
         embed.set_thumbnail(url=self.thumbnail_url(beatmap.beatmapset))
+
+        for attribute, value in result.difficulty_attributes.items():
+            embed.add_field(
+                name=attribute.replace("_", " ").title(),
+                value=f"{value:.2f}",
+                inline=True
+            )
+
         return embed
 
 async def setup(bot: Bot):
