@@ -1,4 +1,5 @@
 
+from .common.helpers.performance import ppv2, ppv2_rosu
 from .common.helpers.filter import ChatFilter
 from .common.cache.events import EventQueue
 from .common.database import Postgres
@@ -38,3 +39,7 @@ requests = Session()
 requests.headers = {
     'User-Agent': f'osuTitanic/banchobot ({config.DOMAIN_NAME})'
 }
+
+# Initialize ppv2 calculator
+instance = ppv2_rosu.RosuPerformanceCalculator(storage)
+ppv2.initialize_calculator(instance)

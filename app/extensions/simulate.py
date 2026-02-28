@@ -1,11 +1,10 @@
 
-from rosu_pp_py import Performance, Beatmap, PerformanceAttributes
 from discord import app_commands, Interaction, Embed
 from discord.ext.commands import Bot
 
 from app.common.config import config_instance as config
+from app.common.database.objects import DBBeatmap, DBScore
 from app.common.database.repositories import beatmaps
-from app.common.database.objects import DBBeatmap
 from app.common.helpers import performance
 from app.common.constants import Mods
 from app.extensions.types import *
@@ -29,31 +28,33 @@ class SimulateScore(BaseCog):
                 ephemeral=True
             )
 
-        if not (beatmap_file := self.storage.get_beatmap(beatmap_id)):
-            return await interaction.response.send_message(
-                "I could not find that beatmap.",
-                ephemeral=True
-            )
-
         await interaction.response.defer()
 
         target_mods = Mods.from_string(mods).value
         target_mode = Modes.get(mode, beatmap.mode)
 
-        converted_mode = performance.convert_mode(target_mode)
-        beatmap_object = Beatmap(bytes=beatmap_file)
-        beatmap_object.convert(converted_mode, target_mods)
+        difficulty = await self.calculate_difficulty(
+            beatmap,
+            target_mode,
+            target_mods
+        )
 
-        calculator = Performance(lazer=False)
-        calculator.set_accuracy(accuracy)
-        calculator.set_misses(misses)
-        calculator.set_mods(target_mods)
+        simulated_score = DBScore()
+        simulated_score.beatmap_id = beatmap.id
+        simulated_score.beatmap = beatmap
+        simulated_score.mods = target_mods
+        simulated_score.mode = target_mode
+        simulated_score.acc = accuracy / 100.0
+        simulated_score.nMiss = misses
+        simulated_score.max_combo = combo or beatmap.max_combo
+        simulated_score.n300 = beatmap.count_normal + beatmap.count_slider + beatmap.count_spinner
+        simulated_score.n100 = 0
+        simulated_score.n50 = 0
+        simulated_score.nGeki = 0
+        simulated_score.nKatu = 0
+        result = await self.calculate_ppv2(simulated_score)
 
-        if combo is not None:
-            calculator.set_combo(combo)
-
-        result = calculator.calculate(beatmap_object)
-        embed = self.create_embed(result, beatmap, mods)
+        embed = self.create_embed(result, difficulty, beatmap, mods)
         await interaction.followup.send(embed=embed)
 
     async def resolve_beatmap(self, beatmap_id: int) -> DBBeatmap | None:
@@ -62,9 +63,32 @@ class SimulateScore(BaseCog):
             beatmap_id
         )
         
+    async def calculate_difficulty(
+        self,
+        beatmap: DBBeatmap,
+        mode: int,
+        mods: Mods
+    ) -> performance.ppv2.DifficultyAttributes:
+        return await self.run_async(
+            performance.calculate_difficulty_from_id,
+            beatmap.id,
+            mode,
+            mods
+        )
+        
+    async def calculate_ppv2(
+        self,
+        score: DBScore
+    ) -> float | None:
+        return await self.run_async(
+            performance.calculate_ppv2,
+            score
+        )
+
     def create_embed(
         self,
-        result: PerformanceAttributes,
+        result: float,
+        difficulty: performance.ppv2.DifficultyAttributes,
         beatmap: DBBeatmap,
         mods: str
     ) -> Embed:
@@ -72,8 +96,8 @@ class SimulateScore(BaseCog):
             title=beatmap.full_name,
             url=f"http://osu.{config.DOMAIN_NAME}/b/{beatmap.id}",
             description=(
-                f"**PP:** {result.pp:.2f}\n"
-                f"**Stars:** {result.difficulty.stars:.2f}★\n" +
+                f"**PP:** {result:.2f}\n"
+                f"**Stars:** {difficulty.star_rating:.2f}★\n" +
                 (f"**Mods:** +{mods}" if mods != "NM" else "")
             )
         )
