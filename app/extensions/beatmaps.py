@@ -83,15 +83,19 @@ class BeatmapManagement(BaseCog):
                 continue
 
             parsed_beatmap = beatmap_helper.parse_beatmap(content, beatmap.id)
-
             if parsed_beatmap is None:
                 continue
 
+            ossapi_map = next((b for b in ossapi_set.beatmaps if b.id == beatmap.id), None)
+            if ossapi_map is None:
+                continue
+
             beatmap_updates = {
-                "count_normal": len(parsed_beatmap.hit_objects(circles=True, sliders=False, spinners=False)),
-                "count_slider": len(parsed_beatmap.hit_objects(circles=False, sliders=True, spinners=False)),
-                "count_spinner": len(parsed_beatmap.hit_objects(circles=False, sliders=False, spinners=True)),
-                "slider_multiplier": parsed_beatmap.slider_multiplier
+                "slider_multiplier": parsed_beatmap.slider_multiplier,
+                "drain_length": ossapi_map.hit_length,
+                "count_normal": ossapi_map.count_circles,
+                "count_slider": ossapi_map.count_sliders,
+                "count_spinner": ossapi_map.count_spinners
             }
             file_updated = False
 
