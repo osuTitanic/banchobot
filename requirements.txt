@@ -11,4 +11,4 @@ sqlalchemy==2.0.46
 timeago==1.0.16
 rosu-pp-py==3.1.0
 pydantic-settings==2.13.1
-git+https://github.com/osuTitanic/slider@cbae45f898d4da32ebadd695ef961f5a845f118a
+git+https://github.com/osuTitanic/slider@bb0fe9e59c27e380778dcb4779913c27cb3c0b8a
