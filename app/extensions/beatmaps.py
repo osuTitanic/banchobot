@@ -87,7 +87,12 @@ class BeatmapManagement(BaseCog):
             if parsed_beatmap is None:
                 continue
 
-            beatmap_updates = {}
+            beatmap_updates = {
+                "count_normal": len(parsed_beatmap.hit_objects(circles=True, sliders=False, spinners=False)),
+                "count_slider": len(parsed_beatmap.hit_objects(circles=False, sliders=True, spinners=False)),
+                "count_spinner": len(parsed_beatmap.hit_objects(circles=False, sliders=False, spinners=True)),
+                "slider_multiplier": parsed_beatmap.slider_multiplier
+            }
             file_updated = False
 
             if beatmap.slider_multiplier != parsed_beatmap.slider_multiplier:
