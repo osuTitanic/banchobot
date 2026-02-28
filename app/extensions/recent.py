@@ -6,7 +6,6 @@ from app.common.constants import Mods, GameMode
 from app.common.helpers import performance
 from app.cog import BaseCog
 
-from rosu_pp_py import DifficultyAttributes
 from discord.ext.commands import Bot
 from discord.ext import commands
 from discord import Color, Embed
@@ -48,7 +47,7 @@ class RecentScore(BaseCog):
         beatmap_file: bytes,
         mode: int,
         mods: Mods = Mods.NoMod
-    ) -> DifficultyAttributes | None:
+    ) -> performance.ppv2.DifficultyAttributes | None:
         return await self.run_async(
             performance.calculate_difficulty,
             beatmap_file, mode, mods
@@ -89,7 +88,7 @@ class RecentScore(BaseCog):
         mode_text = mode.formatted
         mods_text = mods.short
         stars_text = (
-            f"{beatmap_difficulty.stars:.2f}★"
+            f"{beatmap_difficulty.star_rating:.2f}★"
             if beatmap_difficulty else "N/A"
         )
 
