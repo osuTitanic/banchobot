@@ -1,6 +1,6 @@
 bcrypt==5.0.0
 boto3<2
-discord.py==2.6.4
+discord.py==2.7.0
 geoip2==5.2.0
 ossapi==5.3.3
 psycopg2-binary==2.9.11
