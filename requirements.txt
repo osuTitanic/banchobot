@@ -4,7 +4,7 @@ discord.py==2.7.1
 geoip2==5.2.0
 ossapi==5.3.3
 psycopg2-binary==2.9.11
-redis==7.3.0
+redis==7.4.0
 requests==2.33.0
 sendgrid==6.12.5
 sqlalchemy==2.0.48
