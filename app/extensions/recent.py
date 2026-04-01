@@ -46,7 +46,7 @@ class RecentScore(BaseCog):
             "Sorry, but I'm too lazy to get your scores right now, so I'll let circlebot do it instead.",
             reference=ctx.message
         )
-        await ctx.send(f"?r {user.name} -titanic", delete_after=30)
+        await ctx.send(f"?r {user.name} -titanic")
 
     async def calculate_difficulty(
         self,
