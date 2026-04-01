@@ -30,17 +30,23 @@ class RecentScore(BaseCog):
                 reference=ctx.message
             )
 
-        if not (score_list := await self.fetch_recent_scores(user.id, limit=1)):
-            return await ctx.send(
-                "No recent scores found.",
-                reference=ctx.message,
-                ephemeral=True
-            )
+        # if not (score_list := await self.fetch_recent_scores(user.id, limit=1)):
+        #     return await ctx.send(
+        #         "No recent scores found.",
+        #         reference=ctx.message,
+        #         ephemeral=True
+        #     )
 
-        return await ctx.send(
-            embed=await self.render_embed(score_list[0], user),
+        # return await ctx.send(
+        #     embed=await self.render_embed(score_list[0], user),
+        #     reference=ctx.message
+        # )
+
+        await ctx.send(
+            "Sorry, but I'm too lazy to get your scores right now, so I'll let circlebot do it instead.",
             reference=ctx.message
         )
+        await ctx.send(f"?r {user.name} -titanic", delete_after=30)
 
     async def calculate_difficulty(
         self,
@@ -52,7 +58,7 @@ class RecentScore(BaseCog):
             performance.calculate_difficulty,
             beatmap_file, mode, mods
         )
-        
+
     async def calculate_fc_pp(
         self,
         score: DBScore
