@@ -13,7 +13,7 @@ from typing import List
 
 class RecentScore(BaseCog):
     @commands.hybrid_command("recent", description="Display the last score of another player or yourself", aliases=["r", "rs", "last"])
-    async def recent_score(self, ctx: commands.Context, username: str | None = None) -> None:
+    async def recent_score(self, ctx: commands.Context, username: str | None = None):
         user = (
             await self.resolve_user(ctx.author.id) if username is None else
             await self.resolve_user_from_identifier(username)
@@ -30,23 +30,17 @@ class RecentScore(BaseCog):
                 reference=ctx.message
             )
 
-        # if not (score_list := await self.fetch_recent_scores(user.id, limit=1)):
-        #     return await ctx.send(
-        #         "No recent scores found.",
-        #         reference=ctx.message,
-        #         ephemeral=True
-        #     )
+        if not (score_list := await self.fetch_recent_scores(user.id, limit=1)):
+            return await ctx.send(
+                "No recent scores found.",
+                reference=ctx.message,
+                ephemeral=True
+            )
 
-        # return await ctx.send(
-        #     embed=await self.render_embed(score_list[0], user),
-        #     reference=ctx.message
-        # )
-
-        await ctx.send(
-            "Sorry, but I'm too lazy to get your scores right now, so I'll let circlebot do it instead.",
+        return await ctx.send(
+            embed=await self.render_embed(score_list[0], user),
             reference=ctx.message
         )
-        await ctx.send(f"?r {user.name} -titanic")
 
     async def calculate_difficulty(
         self,
