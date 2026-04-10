@@ -1,5 +1,5 @@
 
-from app.common.database.repositories import beatmapsets, beatmaps
+from app.common.database.repositories import beatmapsets, beatmaps, scores
 from app.common.database.objects import DBBeatmapset, DBBeatmap
 from app.common.config import config_instance as config
 from app.common.constants import BeatmapStatus
@@ -185,6 +185,18 @@ class BeatmapManagement(BaseCog):
                 ephemeral=True
             )
 
+        for beatmap in beatmapset.beatmaps:
+            existing_top_scores = scores.fetch_count_beatmap(
+                beatmap.id,
+                beatmap.mode
+            )
+
+            if existing_top_scores > 0:
+                return await interaction.response.send_message(
+                    f"Beatmapset `{beatmapset.full_name}` has scores and cannot be deleted.\n"
+                    f"Please yell at Levi if you want them gone!"
+                )
+
         await interaction.response.defer()
         await self.run_async(
             beatmap_helper.delete_beatmapset,
@@ -215,7 +227,7 @@ class BeatmapManagement(BaseCog):
                 f"Beatmap `{beatmap.full_name}` was approved and cannot be deleted!",
                 ephemeral=True
             )
-            
+
         if len(beatmap.beatmapset.beatmaps) <= 1:
             return await interaction.response.send_message(
                 f"Beatmap `{beatmap.full_name}` is the only map in its set, please use `/deleteset {beatmap.set_id}` instead!",
@@ -231,7 +243,7 @@ class BeatmapManagement(BaseCog):
         return await interaction.followup.send(
             f"Successfully deleted beatmap `{beatmap.full_name}`!"
         )
-        
+
     @app_commands.command(name="modset", description="Modify a beatmapset's status")
     @app_commands.check(role_check)
     async def modify_beatmapset_command(
@@ -258,7 +270,7 @@ class BeatmapManagement(BaseCog):
             beatmapset.id,
             {'status': status.value}
         )
-        
+
         if status >= BeatmapStatus.Ranked:
             await self.update_beatmapset(
                 beatmapset.id,
@@ -269,7 +281,7 @@ class BeatmapManagement(BaseCog):
         return await interaction.followup.send(
             f"Successfully updated the status of [{beatmapset.full_name}](http://osu.{config.DOMAIN_NAME}/s/{beatmapset.id}) to `{status.name}`!"
         )
-        
+
     @app_commands.command(name="moddiff", description="Modify a single beatmap's status")
     @app_commands.check(role_check)
     async def modify_beatmap_command(
@@ -342,7 +354,7 @@ class BeatmapManagement(BaseCog):
                 f"Beatmapset `{beatmapset_id}` does not exist on Titanic!",
                 ephemeral=True
             )
-            
+
         if beatmapset.server != 0 or beatmapset.download_server != 0:
             return await interaction.response.send_message(
                 f"Beatmapset `{beatmapset.full_name}` is already hosted on Titanic!",

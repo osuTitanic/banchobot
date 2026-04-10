@@ -33,11 +33,12 @@ def delete_beatmapset(beatmapset: DBBeatmapset, session: Session = ...) -> None:
 
     for beatmap in beatmapset.beatmaps:
         app.session.storage.remove_beatmap_file(beatmap.id)
-    
+
     # Delete all related data
     for beatmap in beatmapset.beatmaps:
         collaborations.delete_requests_by_beatmap(beatmap.id, session=session)
         collaborations.delete_by_beatmap(beatmap.id, session=session)
+        scores.delete_by_beatmap_id(beatmap.id, session=session)
 
     modding.delete_by_set_id(beatmapset.id, session=session)
     ratings.delete_by_set_id(beatmapset.id, session=session)
