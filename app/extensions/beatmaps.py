@@ -234,6 +234,17 @@ class BeatmapManagement(BaseCog):
                 ephemeral=True
             )
 
+        existing_top_scores = scores.fetch_count_beatmap(
+            beatmap.id,
+            beatmap.mode
+        )
+
+        if existing_top_scores > 0:
+            return await interaction.response.send_message(
+                f"Beatmap `{beatmap.full_name}` has scores and cannot be deleted.\n"
+                f"Please yell at Levi if you want it gone!"
+            )
+
         await interaction.response.defer()
         await self.run_async(
             beatmap_helper.delete_beatmap,

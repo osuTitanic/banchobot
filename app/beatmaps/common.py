@@ -57,3 +57,4 @@ def delete_beatmap(beatmap: DBBeatmap, session: Session = ...) -> None:
     ratings.delete_by_beatmap_hash(beatmap.md5, session=session)
     plays.delete_by_beatmap_id(beatmap.id, session=session)
     beatmaps.delete_by_id(beatmap.id, session=session)
+    scores.delete_by_beatmap_id(beatmap.id, session=session)
