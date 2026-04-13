@@ -2,7 +2,7 @@ bcrypt==5.0.0
 boto3<2
 discord.py==2.7.1
 geoip2==5.2.0
-ossapi==5.3.3
+ossapi==5.3.4
 psycopg2-binary==2.9.11
 redis==7.4.0
 requests==2.33.1
