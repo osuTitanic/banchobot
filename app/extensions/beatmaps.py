@@ -9,11 +9,15 @@ from app.cog import BaseCog
 
 from discord import app_commands, Interaction, Attachment, Member
 from discord.ext.commands import Bot
+from discord.ext import tasks
+from discord.abc import Messageable
 from datetime import datetime
 from typing import List
 
+import builtins
 import zipfile
 import hashlib
+import asyncio
 import stat
 import io
 
@@ -26,6 +30,15 @@ def role_check(interaction: Interaction) -> bool:
     return any(role.id in ALLOWED_ROLE_IDS for role in interaction.user.roles)
 
 class BeatmapManagement(BaseCog):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.beatmap_import_channel_id = None
+        self.beatmap_import_start_id = None
+        self.beatmap_import_end_id = None
+        self.beatmap_import_delay_seconds = 1.0
+        self.import_beatmapset_range.start()
+
     @app_commands.command(name="addset", description="Add a beatmapset from bancho to Titanic!")
     @app_commands.check(role_check)
     async def add_beatmapset(
@@ -49,16 +62,88 @@ class BeatmapManagement(BaseCog):
                 ephemeral=True
             )
 
+        await interaction.response.defer()
+
+        followup = await self.import_beatmapset(
+            beatmapset_id,
+            round_decimal_values,
+            fix_leadin_times,
+            fix_perfect_curves,
+            move_to_pending
+        )
+
+        # TODO: Discord webhook updates
+        return await interaction.followup.send(followup)
+
+    async def cog_unload(self) -> None:
+        self.import_beatmapset_range.cancel()
+
+    @tasks.loop(count=1)
+    async def import_beatmapset_range(self) -> None:
+        if not self.beatmap_import_channel_id:
+            return
+
+        if not self.beatmap_import_start_id or not self.beatmap_import_end_id:
+            return
+
+        if not self.bot:
+            return
+
+        channel = self.bot.get_channel(self.beatmap_import_channel_id)
+
+        if channel is None:
+            channel = await self.bot.fetch_channel(self.beatmap_import_channel_id)
+
+        if not isinstance(channel, Messageable):
+            self.logger.error(f"Configured beatmap import channel is not messageable")
+            return
+
+        start_id = self.beatmap_import_start_id
+        end_id = self.beatmap_import_end_id
+        step = 1 if start_id <= end_id else -1
+
+        await channel.send(
+            f"Starting beatmapset import for IDs `{start_id}` to `{end_id}`"
+        )
+
+        for beatmapset_id in builtins.range(start_id, end_id + step, step):
+            try:
+                message = await self.import_beatmapset(beatmapset_id)
+            except Exception as exc:
+                self.logger.error(f"Failed to import beatmapset {beatmapset_id}", exc_info=exc)
+                message = f"Failed to import beatmapset `{beatmapset_id}`: `{exc}`"
+
+            await channel.send(message)
+            await asyncio.sleep(self.beatmap_import_delay_seconds)
+
+        await channel.send(
+            f"Finished beatmapset import for IDs `{start_id}` to `{end_id}`."
+        )
+
+    @import_beatmapset_range.before_loop
+    async def before_import_beatmapset_range(self) -> None:
+        if self.bot is not None:
+            await self.bot.wait_until_ready()
+
+    async def import_beatmapset(
+        self,
+        beatmapset_id: int,
+        round_decimal_values: bool = True,
+        fix_leadin_times: bool = False,
+        fix_perfect_curves: bool = False,
+        move_to_pending: bool = True
+    ) -> str:
+        if not self.ossapi:
+            return "I am not configured to use the osu!api."
+
+        if await self.fetch_beatmapset(beatmapset_id):
+            return f"Beatmapset `{beatmapset_id}` was already added to Titanic!"
+
         try:
             ossapi_set = await self.ossapi.beatmapset(beatmapset_id)
             assert ossapi_set is not None
         except (ValueError, AssertionError):
-            return await interaction.response.send_message(
-                f"Beatmapset `{beatmapset_id}` does not exist on bancho!",
-                ephemeral=True
-            )
-
-        await interaction.response.defer()
+            return f"Beatmapset `{beatmapset_id}` does not exist on bancho!"
 
         database_set = await self.run_async(
             beatmap_helper.store_ossapi_beatmapset,
@@ -161,8 +246,7 @@ class BeatmapManagement(BaseCog):
         if fix_perfect_curves:
             followup += f"\n(Fixed perfect curves for {curve_updates}/{len(database_set.beatmaps)} beatmaps)"
 
-        # TODO: Discord webhook updates
-        return await interaction.followup.send(followup)
+        return followup
 
     @app_commands.command(name="deleteset", description="Delete a beatmapset from Titanic's database")
     @app_commands.check(role_check)
@@ -338,15 +422,15 @@ class BeatmapManagement(BaseCog):
             )
 
         await interaction.response.defer()
-        file = await file.read()
+        file_bytes = await file.read()
 
         await self.run_async(
             self.storage.upload_beatmap_file,
-            beatmap.id, file
+            beatmap.id, file_bytes
         )
         await self.update_beatmap(
             beatmap.id,
-            {'md5': hashlib.md5(file).hexdigest()}
+            {'md5': hashlib.md5(file_bytes).hexdigest()}
         )
 
         return await interaction.followup.send(
