@@ -33,9 +33,9 @@ class BeatmapManagement(BaseCog):
     def __init__(self) -> None:
         super().__init__()
 
-        self.beatmap_import_channel_id = None
-        self.beatmap_import_start_id = None
-        self.beatmap_import_end_id = None
+        self.beatmap_import_channel_id = 1152971176797294732
+        self.beatmap_import_start_id = 251709
+        self.beatmap_import_end_id = 399001
         self.beatmap_import_delay_seconds = 1.0
         self.import_beatmapset_range.start()
 
@@ -64,7 +64,7 @@ class BeatmapManagement(BaseCog):
 
         await interaction.response.defer()
 
-        followup = await self.import_beatmapset(
+        followup, _ = await self.import_beatmapset(
             beatmapset_id,
             round_decimal_values,
             fix_leadin_times,
@@ -107,14 +107,28 @@ class BeatmapManagement(BaseCog):
         )
 
         for beatmapset_id in builtins.range(start_id, end_id + step, step):
+            await asyncio.sleep(self.beatmap_import_delay_seconds)
+
             try:
-                message = await self.import_beatmapset(beatmapset_id)
+                message, beatmapset = await self.import_beatmapset(
+                    beatmapset_id,
+                    round_decimal_values=True,
+                    fix_leadin_times=True,
+                    fix_perfect_curves=True,
+                    move_to_pending=False
+                )
             except Exception as exc:
                 self.logger.error(f"Failed to import beatmapset {beatmapset_id}", exc_info=exc)
-                message = f"Failed to import beatmapset `{beatmapset_id}`: `{exc}`"
+                await channel.send(f"Failed to import beatmapset `{beatmapset_id}`: `{exc}`")
+                continue
+
+            if beatmapset is None:
+                continue
+
+            if beatmapset.has_storyboard:
+                message += "\n(beatmap has storyboard)"
 
             await channel.send(message)
-            await asyncio.sleep(self.beatmap_import_delay_seconds)
 
         await channel.send(
             f"Finished beatmapset import for IDs `{start_id}` to `{end_id}`."
@@ -132,27 +146,29 @@ class BeatmapManagement(BaseCog):
         fix_leadin_times: bool = False,
         fix_perfect_curves: bool = False,
         move_to_pending: bool = True
-    ) -> str:
+    ) -> tuple[str, DBBeatmapset | None]:
         if not self.ossapi:
-            return "I am not configured to use the osu!api."
+            return "I am not configured to use the osu!api.", None
 
         if await self.fetch_beatmapset(beatmapset_id):
-            return f"Beatmapset `{beatmapset_id}` was already added to Titanic!"
+            return f"Beatmapset `{beatmapset_id}` was already added to Titanic!", None
 
         try:
             ossapi_set = await self.ossapi.beatmapset(beatmapset_id)
             assert ossapi_set is not None
         except (ValueError, AssertionError):
-            return f"Beatmapset `{beatmapset_id}` does not exist on bancho!"
+            return f"Beatmapset `{beatmapset_id}` does not exist on bancho!", None
 
         database_set = await self.run_async(
             beatmap_helper.store_ossapi_beatmapset,
             ossapi_set
         )
-        filesize, filesize_novideo = await self.run_async(
-            beatmap_helper.fetch_osz_filesizes,
-            database_set.id
-        )
+
+        # NOTE: Disabled until we imported all beatmaps
+        # filesize, filesize_novideo = await self.run_async(
+        #     beatmap_helper.fetch_osz_filesizes,
+        #     database_set.id
+        # )
 
         decimal_updates = 0
         leadin_updates = 0
@@ -220,10 +236,11 @@ class BeatmapManagement(BaseCog):
                     beatmap_updates
                 )
 
-        await self.update_beatmapset(
-            database_set.id,
-            {'osz_filesize': filesize, 'osz_filesize_novideo': filesize_novideo}
-        )
+        # NOTE: Disabled until we imported all beatmaps
+        # await self.update_beatmapset(
+        #     database_set.id,
+        #     {'osz_filesize': filesize, 'osz_filesize_novideo': filesize_novideo}
+        # )
 
         if move_to_pending:
             await self.update_beatmapset(
@@ -246,7 +263,7 @@ class BeatmapManagement(BaseCog):
         if fix_perfect_curves:
             followup += f"\n(Fixed perfect curves for {curve_updates}/{len(database_set.beatmaps)} beatmaps)"
 
-        return followup
+        return followup, database_set
 
     @app_commands.command(name="deleteset", description="Delete a beatmapset from Titanic's database")
     @app_commands.check(role_check)
