@@ -137,6 +137,18 @@ class BeatmapManagement(BaseCog):
                 )
                 message += "\n(beatmap has storyboard)"
 
+            if beatmapset.approved_at and beatmapset.approved_at > datetime(2016, 1, 1):
+                # yeah
+                await self.update_beatmapset(
+                    beatmapset.id,
+                    {'status': BeatmapStatus.Pending.value}
+                )
+                await self.update_beatmaps_by_set_id(
+                    beatmapset.id,
+                    {'status': BeatmapStatus.Pending.value}
+                )
+                continue
+
             await channel.send(message)
 
         await channel.send(
