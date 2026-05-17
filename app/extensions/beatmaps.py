@@ -34,9 +34,9 @@ class BeatmapManagement(BaseCog):
         super().__init__()
 
         self.beatmap_import_channel_id = 1152971176797294732
-        self.beatmap_import_start_id = 251709
+        self.beatmap_import_start_id = 251992 # 251709
         self.beatmap_import_end_id = 399001
-        self.beatmap_import_delay_seconds = 1.0
+        self.beatmap_import_delay_seconds = 0.5
         self.import_beatmapset_range.start()
 
     @app_commands.command(name="addset", description="Add a beatmapset from bancho to Titanic!")
