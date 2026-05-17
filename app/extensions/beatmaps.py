@@ -126,6 +126,15 @@ class BeatmapManagement(BaseCog):
                 continue
 
             if beatmapset.has_storyboard:
+                # storyboard maps need extra attention
+                await self.update_beatmapset(
+                    beatmapset.id,
+                    {'status': BeatmapStatus.Pending.value}
+                )
+                await self.update_beatmaps_by_set_id(
+                    beatmapset.id,
+                    {'status': BeatmapStatus.Pending.value}
+                )
                 message += "\n(beatmap has storyboard)"
 
             await channel.send(message)
