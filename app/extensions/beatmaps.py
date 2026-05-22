@@ -151,15 +151,16 @@ class BeatmapManagement(BaseCog):
             )
 
         followup = f"Successfully added [{database_set.full_name}](http://osu.{config.DOMAIN_NAME}/s/{database_set.id}) to Titanic!"
+        total_beatmaps = len(database_set.beatmaps) - 1  # why -1, i don't understand
 
         if round_decimal_values:
-            followup += f"\n(Fixed {decimal_updates}/{len(database_set.beatmaps)} beatmaps with decimal values)"
+            followup += f"\n(Fixed {decimal_updates}/{total_beatmaps} beatmaps with decimal values)"
 
         if fix_leadin_times:
-            followup += f"\n(Fixed lead-in times for {leadin_updates}/{len(database_set.beatmaps)} beatmaps)"
+            followup += f"\n(Fixed lead-in times for {leadin_updates}/{total_beatmaps} beatmaps)"
 
         if fix_perfect_curves:
-            followup += f"\n(Fixed perfect curves for {curve_updates}/{len(database_set.beatmaps)} beatmaps)"
+            followup += f"\n(Fixed perfect curves for {curve_updates}/{total_beatmaps} beatmaps)"
 
         # TODO: Discord webhook updates
         return await interaction.followup.send(followup)
