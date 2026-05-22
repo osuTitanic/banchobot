@@ -97,27 +97,33 @@ class BeatmapManagement(BaseCog):
                 "count_slider": ossapi_map.count_sliders,
                 "count_spinner": ossapi_map.count_spinners
             }
-            file_updated = False
 
             if beatmap.slider_multiplier != parsed_beatmap.slider_multiplier:
                 # Slider multiplier changed from db to api
                 beatmap_updates['slider_multiplier'] = parsed_beatmap.slider_multiplier
 
-            if round_decimal_values and beatmap_helper.fix_beatmap_decimal_values(parsed_beatmap):
+            decimals_fixed, leadin_fixed, curves_fixed = beatmap_helper.apply_beatmap_patches(
+                parsed_beatmap,
+                round_decimal_values,
+                fix_leadin_times,
+                fix_perfect_curves
+            )
+            file_updated = any(
+                [decimals_fixed, leadin_fixed, curves_fixed]
+            )
+
+            if decimals_fixed:
                 beatmap_updates['od'] = int(parsed_beatmap.overall_difficulty)
                 beatmap_updates['ar'] = int(parsed_beatmap.approach_rate)
                 beatmap_updates['hp'] = int(parsed_beatmap.hp_drain_rate)
                 beatmap_updates['cs'] = int(parsed_beatmap.circle_size)
                 decimal_updates += 1
-                file_updated = True
 
-            if fix_leadin_times and beatmap_helper.fix_beatmap_lead_in(parsed_beatmap):
+            if leadin_fixed:
                 leadin_updates += 1
-                file_updated = True
 
-            if fix_perfect_curves and beatmap_helper.convert_perfect_curves(parsed_beatmap):
+            if curves_fixed:
                 curve_updates += 1
-                file_updated = True
 
             if file_updated:
                 content_updated = beatmap_helper.pack_beatmap(parsed_beatmap)
