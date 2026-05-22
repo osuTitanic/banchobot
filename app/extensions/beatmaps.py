@@ -327,7 +327,7 @@ class BeatmapManagement(BaseCog):
     async def upload_beatmap_command(
         self,
         interaction: Interaction,
-        file: Attachment,
+        attachment: Attachment,
         beatmap_id: int
     ) -> None:
         beatmap = await self.fetch_beatmap(beatmap_id)
@@ -339,15 +339,15 @@ class BeatmapManagement(BaseCog):
             )
 
         await interaction.response.defer()
-        file = await file.read()
+        content = await attachment.read()
 
         await self.run_async(
             self.storage.upload_beatmap_file,
-            beatmap.id, file
+            beatmap.id, content
         )
         await self.update_beatmap(
             beatmap.id,
-            {'md5': hashlib.md5(file).hexdigest()}
+            {'md5': hashlib.md5(content).hexdigest()}
         )
 
         return await interaction.followup.send(
@@ -379,7 +379,7 @@ class BeatmapManagement(BaseCog):
 
         if not content:
             return await interaction.response.send_message(
-                f".osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id}) not found in storage!",
+                f".osu file for [{beatmap.full_name}]({beatmap.link}) not found in storage!",
                 ephemeral=True
             )
 
@@ -389,31 +389,32 @@ class BeatmapManagement(BaseCog):
         )
         if parsed_beatmap is None:
             return await interaction.response.send_message(
-                f"Failed to parse the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!",
+                f"Failed to parse the .osu file for [{beatmap.full_name}]({beatmap.link})!",
                 ephemeral=True
             )
 
-        updates = {}
-        file_updated = False
-
-        if fix_decimal_values and beatmap_helper.fix_beatmap_decimal_values(parsed_beatmap):
-            updates['od'] = int(parsed_beatmap.overall_difficulty)
-            updates['ar'] = int(parsed_beatmap.approach_rate)
-            updates['hp'] = int(parsed_beatmap.hp_drain_rate)
-            updates['cs'] = int(parsed_beatmap.circle_size)
-            file_updated = True
-
-        if fix_leadin_times and beatmap_helper.fix_beatmap_lead_in(parsed_beatmap):
-            file_updated = True
-
-        if fix_perfect_curves and beatmap_helper.convert_perfect_curves(parsed_beatmap):
-            file_updated = True
+        decimals_fixed, leadin_fixed, curves_fixed = beatmap_helper.apply_beatmap_patches(
+            parsed_beatmap,
+            fix_decimal_values,
+            fix_leadin_times,
+            fix_perfect_curves
+        )
+        file_updated = any(
+            [decimals_fixed, leadin_fixed, curves_fixed]
+        )
 
         if not file_updated:
             return await interaction.response.send_message(
                 f"No issues found in the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!",
                 ephemeral=True
             )
+
+        updates: dict[str, int | str] = {
+            'od': int(parsed_beatmap.overall_difficulty),
+            'ar': int(parsed_beatmap.approach_rate),
+            'hp': int(parsed_beatmap.hp_drain_rate),
+            'cs': int(parsed_beatmap.circle_size)
+        }
 
         content_updated = beatmap_helper.pack_beatmap(parsed_beatmap)
         updates['md5'] = hashlib.md5(content_updated).hexdigest()
@@ -428,7 +429,7 @@ class BeatmapManagement(BaseCog):
         )
 
         return await interaction.followup.send(
-            f"Successfully fixed the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!"
+            f"Successfully fixed the .osu file for [{beatmap.full_name}]({beatmap.link})!"
         )
 
     @app_commands.command(name="downloadset", description="Move the files of a beatmapset from Bancho to Titanic")

@@ -5,6 +5,8 @@ from app.common.database.repositories import *
 from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy.orm import Session
 from slider import Beatmap
+
+import app.beatmaps as beatmap_helper
 import app
 
 def parse_beatmap(content: bytes, beatmap_id: int) -> Beatmap | None:
@@ -25,7 +27,7 @@ def round_half_up(value: float) -> int:
     return int(Decimal(str(value)).quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
 @wrapper.session_wrapper
-def delete_beatmapset(beatmapset: DBBeatmapset, session: Session = ...) -> None:
+def delete_beatmapset(beatmapset: DBBeatmapset, session: Session = wrapper.SessionProvider) -> None:
     app.session.storage.remove_osz2(beatmapset.id)
     app.session.storage.remove_osz(beatmapset.id)
     app.session.storage.remove_background(beatmapset.id)
@@ -49,7 +51,7 @@ def delete_beatmapset(beatmapset: DBBeatmapset, session: Session = ...) -> None:
     beatmapsets.delete_by_id(beatmapset.id, session=session)
 
 @wrapper.session_wrapper
-def delete_beatmap(beatmap: DBBeatmap, session: Session = ...) -> None:
+def delete_beatmap(beatmap: DBBeatmap, session: Session = wrapper.SessionProvider) -> None:
     app.session.storage.remove_beatmap_file(beatmap.id)
 
     collaborations.delete_requests_by_beatmap(beatmap.id, session=session)
@@ -58,3 +60,24 @@ def delete_beatmap(beatmap: DBBeatmap, session: Session = ...) -> None:
     plays.delete_by_beatmap_id(beatmap.id, session=session)
     beatmaps.delete_by_id(beatmap.id, session=session)
     scores.delete_by_beatmap_id(beatmap.id, session=session)
+
+@wrapper.session_wrapper
+def apply_beatmap_patches(
+    beatmap: Beatmap,
+    fix_decimal_values: bool = True,
+    fix_leadin_times: bool = True,
+    fix_perfect_curves: bool = True
+) -> tuple[bool, bool, bool]:
+    decimals_fixed = (
+        fix_decimal_values and
+        beatmap_helper.fix_beatmap_decimal_values(beatmap)
+    )
+    leadin_fixed = (
+        fix_leadin_times and
+        beatmap_helper.fix_beatmap_lead_in(beatmap)
+    )
+    perfect_curves_fixed = (
+        fix_perfect_curves and
+        beatmap_helper.convert_perfect_curves(beatmap)
+    )
+    return decimals_fixed, leadin_fixed, perfect_curves_fixed
