@@ -354,6 +354,83 @@ class BeatmapManagement(BaseCog):
             f"Successfully replaced the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!"
         )
 
+    @app_commands.command(name="fixmap", description="Fix common compatibility issues in a beatmap file")
+    @app_commands.check(role_check)
+    async def fix_beatmap_command(
+        self,
+        interaction: Interaction,
+        beatmap_id: int,
+        fix_decimal_values: bool = True,
+        fix_leadin_times: bool = True,
+        fix_perfect_curves: bool = True
+    ) -> None:
+        beatmap = await self.fetch_beatmap(beatmap_id)
+
+        if not beatmap:
+            return await interaction.response.send_message(
+                f"Beatmap `{beatmap_id}` does not exist on Titanic!",
+                ephemeral=True
+            )
+
+        content = await self.run_async(
+            self.storage.get_beatmap,
+            beatmap.id
+        )
+
+        if not content:
+            return await interaction.response.send_message(
+                f".osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id}) not found in storage!",
+                ephemeral=True
+            )
+
+        parsed_beatmap = beatmap_helper.parse_beatmap(
+            content,
+            beatmap.id
+        )
+        if parsed_beatmap is None:
+            return await interaction.response.send_message(
+                f"Failed to parse the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!",
+                ephemeral=True
+            )
+
+        updates = {}
+        file_updated = False
+
+        if fix_decimal_values and beatmap_helper.fix_beatmap_decimal_values(parsed_beatmap):
+            updates['od'] = int(parsed_beatmap.overall_difficulty)
+            updates['ar'] = int(parsed_beatmap.approach_rate)
+            updates['hp'] = int(parsed_beatmap.hp_drain_rate)
+            updates['cs'] = int(parsed_beatmap.circle_size)
+            file_updated = True
+
+        if fix_leadin_times and beatmap_helper.fix_beatmap_lead_in(parsed_beatmap):
+            file_updated = True
+
+        if fix_perfect_curves and beatmap_helper.convert_perfect_curves(parsed_beatmap):
+            file_updated = True
+
+        if not file_updated:
+            return await interaction.response.send_message(
+                f"No issues found in the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!",
+                ephemeral=True
+            )
+
+        content_updated = beatmap_helper.pack_beatmap(parsed_beatmap)
+        updates['md5'] = hashlib.md5(content_updated).hexdigest()
+
+        await self.run_async(
+            self.storage.upload_beatmap_file,
+            beatmap.id, content_updated
+        )
+        await self.update_beatmap(
+            beatmap.id,
+            updates
+        )
+
+        return await interaction.followup.send(
+            f"Successfully fixed the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!"
+        )
+
     @app_commands.command(name="downloadset", description="Move the files of a beatmapset from Bancho to Titanic")
     @app_commands.check(role_check)
     async def download_beatmapset_command(
