@@ -11,7 +11,7 @@ import app
 import re
 
 @wrapper.session_wrapper
-def store_ossapi_beatmapset(set: Beatmapset, session: Session = ...) -> DBBeatmapset:
+def store_ossapi_beatmapset(set: Beatmapset, session: Session = wrapper.SessionProvider) -> DBBeatmapset:
     """Convert an osu! api beatmapset to a local beatmapset and store it in the database"""
     database_set = beatmapsets.create(
         set.id,
@@ -30,6 +30,7 @@ def store_ossapi_beatmapset(set: Beatmapset, session: Session = ...) -> DBBeatma
         last_update=set.last_updated,
         session=session
     )
+    assert set.beatmaps, "Beatmapset must have at least one beatmap"
 
     for beatmap in set.beatmaps:
         beatmap = beatmaps.create(
@@ -37,7 +38,7 @@ def store_ossapi_beatmapset(set: Beatmapset, session: Session = ...) -> DBBeatma
             beatmap.mode_int, beatmap.checksum,
             beatmap.status.value, beatmap.version,
             resolve_beatmap_filename(beatmap.id),
-            beatmap.total_length, beatmap.max_combo,
+            beatmap.total_length, beatmap.max_combo or 0,
             beatmap.bpm, beatmap.cs,
             beatmap.ar, beatmap.accuracy,
             beatmap.drain, beatmap.difficulty_rating,
