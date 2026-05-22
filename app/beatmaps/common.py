@@ -61,7 +61,6 @@ def delete_beatmap(beatmap: DBBeatmap, session: Session = wrapper.SessionProvide
     beatmaps.delete_by_id(beatmap.id, session=session)
     scores.delete_by_beatmap_id(beatmap.id, session=session)
 
-@wrapper.session_wrapper
 def apply_beatmap_patches(
     beatmap: Beatmap,
     fix_decimal_values: bool = True,
