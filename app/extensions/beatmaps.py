@@ -33,8 +33,8 @@ class BeatmapManagement(BaseCog):
         interaction: Interaction,
         beatmapset_id: int,
         round_decimal_values: bool = True,
-        fix_leadin_times: bool = False,
-        fix_perfect_curves: bool = False,
+        fix_leadin_times: bool = True,
+        fix_perfect_curves: bool = True,
         move_to_pending: bool = True
     ) -> None:
         if not self.ossapi:
