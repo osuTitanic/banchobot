@@ -45,7 +45,7 @@ WORKDIR /bot
 COPY . .
 
 # Byte-compile for faster cold start
-RUN python -m compileall -q app
+RUN python -m compileall -q /usr/local/lib/python3.14/site-packages app main.py
 
 STOPSIGNAL SIGTERM
 CMD ["python", "main.py"]
