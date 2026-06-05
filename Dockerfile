@@ -47,5 +47,5 @@ COPY . .
 # Byte-compile for faster cold start
 RUN python -m compileall -q /usr/local/lib/python3.14/site-packages app main.py
 
-STOPSIGNAL SIGTERM
+STOPSIGNAL SIGINT
 CMD ["python", "main.py"]
