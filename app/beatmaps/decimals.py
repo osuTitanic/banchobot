@@ -1,8 +1,9 @@
 
 from .common import round_half_up
+from typing import Callable
 from slider import Beatmap
 
-def fix_beatmap_decimal_values(beatmap: Beatmap) -> bool:
+def fix_beatmap_decimal_values(beatmap: Beatmap, rounding_method: Callable[[float], int] = round_half_up) -> bool:
     """Round OD/AR/HP/CS values on a parsed beatmap in-place."""
     has_updates = False
 
@@ -19,7 +20,7 @@ def fix_beatmap_decimal_values(beatmap: Beatmap) -> bool:
         if float(value).is_integer():
             continue
 
-        rounded_value = round_half_up(value)
+        rounded_value = rounding_method(value)
         setattr(beatmap, attribute_name, rounded_value)
         has_updates = True
 
