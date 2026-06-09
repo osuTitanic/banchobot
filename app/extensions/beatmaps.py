@@ -436,7 +436,7 @@ class BeatmapManagement(BaseCog):
         )
 
         return await interaction.followup.send(
-            f"Successfully fixed the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!"
+            f"Successfully fixed the .osu file for [{beatmap.full_name}]({beatmap.url})!"
         )
 
     @app_commands.command(name="downloadset", description="Move the files of a beatmapset from Bancho to Titanic")
