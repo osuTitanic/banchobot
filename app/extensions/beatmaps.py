@@ -1,4 +1,3 @@
-
 from app.common.database.repositories import beatmapsets, beatmaps, scores
 from app.common.database.objects import DBBeatmapset, DBBeatmap
 from app.common.config import config_instance as config
@@ -399,6 +398,8 @@ class BeatmapManagement(BaseCog):
                 ephemeral=True
             )
 
+        await interaction.response.defer()
+
         decimals_fixed, leadin_fixed, curves_fixed = beatmap_helper.apply_beatmap_patches(
             parsed_beatmap,
             fix_decimal_values,
@@ -410,7 +411,7 @@ class BeatmapManagement(BaseCog):
         )
 
         if not file_updated:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"No issues found in the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!",
                 ephemeral=True
             )
@@ -435,7 +436,7 @@ class BeatmapManagement(BaseCog):
         )
 
         return await interaction.followup.send(
-            f"Successfully fixed the .osu file for [{beatmap.full_name}]({beatmap.link})!"
+            f"Successfully fixed the .osu file for [{beatmap.full_name}](http://osu.{config.DOMAIN_NAME}/b/{beatmap.id})!"
         )
 
     @app_commands.command(name="downloadset", description="Move the files of a beatmapset from Bancho to Titanic")

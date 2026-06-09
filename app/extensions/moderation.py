@@ -1,4 +1,3 @@
-
 # TODO: /wipescores - Wipe scores from a beatmap or beatmapset
 
 from app.common.database.objects import DBGroupEntry, DBUser, DBName, DBGroup
@@ -198,12 +197,14 @@ class Moderation(BaseCog):
                 ephemeral=True
             )
 
+        await interaction.response.defer()
+
         group_list = await self.fetch_groups()
         group_map = {g.name.lower(): g for g in group_list}
         group_map.update({g.short_name.lower(): g for g in group_list})
 
         if group.lower() not in group_map:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"I could not find that group: `{group}`.",
                 ephemeral=True
             )
@@ -213,12 +214,12 @@ class Moderation(BaseCog):
         try:
             await self.create_group_entry(user.id, group_object.id)
         except Exception as e:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"User `{user.name}` is already in group `{group_object.name}`.",
                 ephemeral=True
             )
             
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"User `{user.name}` has been added to group `{group_object.name}`."
         )
 
@@ -243,12 +244,14 @@ class Moderation(BaseCog):
                 ephemeral=True
             )
 
+        await interaction.response.defer()
+
         group_list = await self.fetch_groups()
         group_map = {g.name.lower(): g for g in group_list}
         group_map.update({g.short_name.lower(): g for g in group_list})
         
         if group.lower() not in group_map:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"I could not find that group: `{group}`.",
                 ephemeral=True
             )
@@ -257,12 +260,12 @@ class Moderation(BaseCog):
         success = await self.delete_group_entry(user.id, group_object.id)
         
         if not success:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"User `{user.name}` is not in group `{group_object.name}`.",
                 ephemeral=True
             )
             
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"User `{user.name}` has been removed from group `{group_object.name}`."
         )
 
