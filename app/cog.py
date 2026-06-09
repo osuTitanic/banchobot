@@ -1,4 +1,3 @@
-
 from ossapi.ossapiv2_async import OssapiAsync
 from discord.ext.commands import Cog, Context
 from discord import Interaction
@@ -12,6 +11,7 @@ from app import session
 
 import hashlib
 import asyncio
+import logging
 
 class BaseCog(Cog):
     def __init__(self) -> None:
@@ -32,10 +32,13 @@ class BaseCog(Cog):
         if not config.OSU_CLIENT_ID.isdigit():
             return
 
-        self.ossapi = OssapiAsync(
-            int(config.OSU_CLIENT_ID),
-            config.OSU_CLIENT_SECRET
-        )
+        try:
+            self.ossapi = OssapiAsync(
+                int(config.OSU_CLIENT_ID),
+                config.OSU_CLIENT_SECRET
+            )
+        except Exception as e:
+            self.logger.warning(f'Failed to initialize OSU API client: {e}')
 
     @staticmethod
     async def run_async(func: Callable, *args, **kwargs):
