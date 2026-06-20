@@ -13,7 +13,7 @@ import re
 @wrapper.session_wrapper
 def store_ossapi_beatmapset(set: Beatmapset, session: Session = wrapper.SessionProvider) -> DBBeatmapset:
     """Convert an osu! api beatmapset to a local beatmapset and store it in the database"""
-    database_set = beatmapsets.create(
+    database_set: DBBeatmapset = beatmapsets.create(
         set.id,
         set.title, set.title_unicode,
         set.artist, set.artist_unicode,
@@ -30,6 +30,7 @@ def store_ossapi_beatmapset(set: Beatmapset, session: Session = wrapper.SessionP
         last_update=set.last_updated,
         session=session
     )
+    database_set.explicit = set.nsfw
     assert set.beatmaps, "Beatmapset must have at least one beatmap"
 
     for beatmap in set.beatmaps:
