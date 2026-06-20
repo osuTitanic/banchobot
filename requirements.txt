@@ -7,8 +7,8 @@ psycopg2-binary==2.9.12
 redis==8.0.0
 requests==2.34.2
 sendgrid==6.12.5
-sqlalchemy==2.0.50
+sqlalchemy==2.0.51
 timeago==1.0.16
 rosu-pp-py==4.0.2
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2
 git+https://github.com/osuTitanic/slider@bb0fe9e59c27e380778dcb4779913c27cb3c0b8a
