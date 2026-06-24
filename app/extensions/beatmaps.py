@@ -74,7 +74,7 @@ class BeatmapManagement(BaseCog):
 
         for beatmap in database_set.beatmaps:
             content = await self.run_async(
-                self.storage.get_beatmap,
+                self.beatmaps.osu,
                 beatmap.id
             )
 
@@ -378,7 +378,7 @@ class BeatmapManagement(BaseCog):
             )
 
         content = await self.run_async(
-            self.storage.get_beatmap,
+            self.beatmaps.osu,
             beatmap.id
         )
 
@@ -462,11 +462,11 @@ class BeatmapManagement(BaseCog):
         response_details = []
 
         background_file = await self.run_async(
-            self.storage.get_background,
-            f"{beatmapset_id}l"
+            self.beatmaps.background,
+            beatmapset_id, True
         )
         audio_file = await self.run_async(
-            self.storage.get_mp3,
+            self.beatmaps.preview,
             beatmapset_id
         )
 
@@ -484,7 +484,7 @@ class BeatmapManagement(BaseCog):
 
         for beatmap in beatmapset.beatmaps:
             osu_file = await self.run_async(
-                self.storage.get_beatmap,
+                self.beatmaps.osu,
                 beatmap.id
             )
 
@@ -498,7 +498,7 @@ class BeatmapManagement(BaseCog):
             )
 
         osz_response = await self.run_async(
-            self.storage.get_osz,
+            self.beatmaps.osz,
             beatmapset_id
         )
 
@@ -567,7 +567,7 @@ class BeatmapManagement(BaseCog):
                         continue
 
                     osu_file = await self.run_async(
-                        self.storage.get_beatmap,
+                        self.beatmaps.osu,
                         beatmap.id
                     )
 

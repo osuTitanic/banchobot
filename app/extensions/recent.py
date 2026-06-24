@@ -77,7 +77,7 @@ class RecentScore(BaseCog):
             return response
 
     async def render_embed(self, score: DBScore, user: DBUser) -> Embed:
-        beatmap_file = self.storage.get_beatmap(score.beatmap_id)
+        beatmap_file = self.beatmaps.osu(score.beatmap_id)
         mode = GameMode(score.mode)
         mods = Mods(score.mods)
 

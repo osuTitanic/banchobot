@@ -21,6 +21,7 @@ class BaseCog(Cog):
         self.logger = session.logger
         self.events = session.events
         self.storage = session.storage
+        self.beatmaps = session.beatmaps
         self.filters = session.filters
         self.database = session.database
         self.requests = session.requests

@@ -64,10 +64,10 @@ def fetch_osz_filesizes(set_id: int) -> Tuple[int, int]:
     """Fetch the filesize of a beatmapset's .osz file from a mirror"""
     filesize, filesize_novideo = 0, 0
 
-    if (response := app.session.storage.api.osz(set_id, no_video=False)):
+    if (response := app.session.beatmaps.api.osz_response(set_id, no_video=False)):
         filesize = int(response.headers.get('Content-Length', default=0))
 
-    if (response := app.session.storage.api.osz(set_id, no_video=True)):
+    if (response := app.session.beatmaps.api.osz_response(set_id, no_video=True)):
         filesize_novideo = int(response.headers.get('Content-Length', default=0))
 
     return filesize, filesize_novideo
