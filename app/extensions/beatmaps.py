@@ -546,7 +546,7 @@ class BeatmapManagement(BaseCog):
         await interaction.response.defer()
 
         osz_file = await self.run_async(
-            self.storage.get_osz_internal,
+            self.storage.get_osz,
             beatmapset.id
         )
 
