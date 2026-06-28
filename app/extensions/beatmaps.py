@@ -497,15 +497,15 @@ class BeatmapManagement(BaseCog):
                 beatmap.id, osu_file
             )
 
-        osz_response = await self.run_async(
+        osz_iterator, _ = await self.run_async(
             self.beatmaps.osz,
             beatmapset_id
         )
 
-        if osz_response is not None:
+        if osz_iterator is not None:
             await self.run_async(
                 self.storage.upload_osz,
-                beatmapset_id, b"".join(osz_response)
+                beatmapset_id, b"".join(osz_iterator)
             )
         else:
             response_details.append(
