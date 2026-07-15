@@ -267,7 +267,8 @@ class BeatmapManagement(BaseCog):
         self,
         interaction: Interaction,
         beatmapset_id: int,
-        status_type: StatusType
+        status_type: StatusType,
+        update_approved_date: bool = True
     ) -> None:
         status = BeatmapStatus.from_lowercase(status_type)
         beatmapset = await self.fetch_beatmapset(beatmapset_id)
@@ -288,7 +289,7 @@ class BeatmapManagement(BaseCog):
             {'status': status.value}
         )
 
-        if status >= BeatmapStatus.Ranked:
+        if status >= BeatmapStatus.Ranked and update_approved_date:
             await self.update_beatmapset(
                 beatmapset.id,
                 {'approved_at': datetime.now()}
