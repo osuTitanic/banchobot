@@ -7,7 +7,7 @@ psycopg2-binary==2.9.12
 redis==8.1.0
 requests==2.34.2
 sendgrid==6.12.5
-sqlalchemy==2.0.51
+sqlalchemy==2.0.52
 timeago==1.0.16
 osu-native-py==0.1.0
 pydantic-settings==2.15.0
