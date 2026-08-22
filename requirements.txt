@@ -9,7 +9,7 @@ requests==2.34.2
 sendgrid==6.12.5
 sqlalchemy==2.0.52
 timeago==1.0.16
-osu-native-py==0.1.0
+osu-native-py==0.1.1
 pydantic-settings==2.15.0
 pillow==12.3.0
 zipstream-ng==1.9.2
