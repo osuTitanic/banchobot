@@ -2,7 +2,7 @@
 from app.common.config import config_instance as config
 from app.common.database.objects import DBScore, DBUser
 from app.common.database.repositories import scores
-from app.common.constants import Mods, GameMode
+from app.common.constants import Mods, ScoreSortBy
 from app.extensions.types import *
 from discord.ext.commands import Bot
 from discord.ext import commands
@@ -65,8 +65,8 @@ class TopScores(BaseCog):
         with self.database.managed_session() as session:
             user_scores = await self.run_async(
                 scores.fetch_top_scores,
-                user_id, mode, True,
-                limit, 0, session
+                user_id, mode, True, limit, 0,
+                ScoreSortBy.Performance, session
             )
 
             for score in user_scores:
