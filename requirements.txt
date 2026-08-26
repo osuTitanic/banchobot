@@ -12,6 +12,6 @@ timeago==1.0.16
 osu-native-py==0.1.1
 pydantic-settings==2.15.0
 pillow==12.3.0
-zipstream-ng==1.9.2
+zipstream-ng==1.9.3
 git+https://github.com/osuTitanic/slider@bb0fe9e59c27e380778dcb4779913c27cb3c0b8a
 git+https://github.com/mgeisler/pygob@ebef7bcd2f13cad4975a9a06e43f6fbdfcb8b3fe
