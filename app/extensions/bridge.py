@@ -119,7 +119,6 @@ class BanchoChatBridge(BaseCog):
 
         await self.create_message(
             target_user.id,
-            target_user.name,
             message_target,
             message_content
         )
@@ -130,10 +129,10 @@ class BanchoChatBridge(BaseCog):
             user, duration, reason
         )
 
-    async def create_message(self, sender_id: int, username: str, target: str, content: str) -> None:
+    async def create_message(self, sender_id: int, target: str, content: str) -> None:
         return await self.run_async(
             messages.create,
-            sender_id, username, target, content
+            sender_id, target, content
         )
 
 async def setup(bot: Bot):
