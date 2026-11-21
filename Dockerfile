@@ -46,12 +46,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Reuse site-packages & console entry points from builder
 COPY --from=builder /install/usr/local /usr/local
 
+RUN groupadd --gid 10001 sailor && \
+    useradd --uid 10001 --gid sailor --create-home --shell /usr/sbin/nologin sailor
+
 WORKDIR /bot
 COPY . .
 
 # Byte-compile for faster cold start and verify native loading
 RUN python -c 'from osu_native_py.native import LIB_PATH; assert LIB_PATH.is_file(), LIB_PATH' && \
     python -m compileall -q /usr/local/lib/python3.14/site-packages app main.py
+
+RUN mkdir -p /bot/.data && \
+    chown sailor:sailor /bot/.data
+
+USER sailor:sailor
 
 STOPSIGNAL SIGINT
 CMD ["python", "main.py"]
