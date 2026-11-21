@@ -35,7 +35,8 @@ class BaseCog(Cog):
 
         self.ossapi = OssapiAsync(
             int(config.OSU_CLIENT_ID),
-            config.OSU_CLIENT_SECRET
+            config.OSU_CLIENT_SECRET,
+            token_directory=config.DATA_PATH
         )
 
     @staticmethod
